@@ -117,7 +117,7 @@ type Client struct {
 	DebugMode        bool
 	Logger           *log.Logger
 	StartTime        time.Time
-	Syncgrp          *syncgrp.SyncGrp
+	SG               *syncgrp.SyncGrp
 	UseLogFile       bool
 }
 
@@ -138,7 +138,7 @@ func New(cfg *Configuration) *Client {
 		subscriptionsMap: make(map[string]byte),
 		Ccy:              cfg.Currency,
 		DebugMode:        cfg.DebugMode,
-		Syncgrp:          syncgrp.New(),
+		SG:               syncgrp.New(),
 		UseLogFile:       cfg.UseLogFile,
 	}
 	c.StartTime = tm.UTC()
@@ -192,12 +192,12 @@ func (c *Client) createLogger() error {
 		dir = "log-test/"
 		testprod = "test"
 	}
-	os.Mkdir(dir, os.ModeDir)
-	os.Chmod(dir, 0754)
+	_ = os.Mkdir(dir, os.ModeDir)
+	_ = os.Chmod(dir, 0754)
 	if c.UseLogFile {
-		tmStr := tm.UTC().Format(time.RFC3339)[:10]
+		stamp := tm.Format2(tm.UTC())
 		sb.WriteString(
-			fmt.Sprintf("%v%v-%v-%v.%v", dir, "api-log", testprod, tmStr, "log"))
+			fmt.Sprintf("%v%v-%v-%v.%v", dir, "api-log", testprod, stamp, "log"))
 		logFilePath = strings.ReplaceAll(sb.String(), " ", "-")
 		sb.Reset()
 		logFilePath = strings.ReplaceAll(logFilePath, ":", "")
@@ -214,10 +214,10 @@ func (c *Client) createLogger() error {
 
 func (c *Client) decrementRqstCnt(nsecs int) {
 	if nsecs > 0 {
-		c.Syncgrp.Lock()
+		c.SG.Lock()
 		c.rqstCnt.mch = imax(0, c.rqstCnt.mch-nsecs*c.Acct.Lmts.MatchingEngine)
 		c.rqstCnt.non = imax(0, c.rqstCnt.non-nsecs*c.Acct.Lmts.NonMatchingEngine)
-		c.Syncgrp.Unlock()
+		c.SG.Unlock()
 	}
 }
 
@@ -246,18 +246,18 @@ func (c *Client) reconnect() {
 }
 
 func (c *Client) resetRqstTmr() {
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	t0 := c.rqstTmr.t1
 	t1 := tm.UTC()
 	c.rqstTmr.t0, c.rqstTmr.t1, c.rqstTmr.dt = t0, t1, t1.Sub(t0)
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 }
 
 // setIsConnected sets state for isConnected
 func (c *Client) setIsConnected(state bool) {
-	c.Syncgrp.RWLock()
+	c.SG.RWLock()
 	c.isConnected = state
-	c.Syncgrp.RWUnlock()
+	c.SG.RWUnlock()
 }
 
 func (c *Client) start() (err error) {
@@ -309,7 +309,7 @@ func (c *Client) subscribe(channels []string) (e error) {
 		pblcChannels []string
 		prvtChannels []string
 	)
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	for _, v := range c.subscriptions {
 		if _, ok := c.subscriptionsMap[v]; ok {
 			continue
@@ -320,37 +320,37 @@ func (c *Client) subscribe(channels []string) (e error) {
 			pblcChannels = append(pblcChannels, v)
 		}
 	}
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	if len(pblcChannels) > 0 {
 		_, e = c.SubPblc(pblcChannels)
 		if e != nil {
 			return e
 		}
-		c.Syncgrp.Lock()
+		c.SG.Lock()
 		for _, v := range pblcChannels {
 			c.subscriptionsMap[v] = 0
 		}
-		c.Syncgrp.Unlock()
+		c.SG.Unlock()
 	}
 	if len(prvtChannels) > 0 {
 		_, e = c.SubPrvt(prvtChannels)
 		if e != nil {
 			return e
 		}
-		c.Syncgrp.Lock()
+		c.SG.Lock()
 		for _, v := range prvtChannels {
 			c.subscriptionsMap[v] = 0
 		}
-		c.Syncgrp.Unlock()
+		c.SG.Unlock()
 	}
 	return nil
 }
 
 func (c *Client) updtRqstTmr() {
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	c.rqstTmr.t1 = tm.UTC()
 	c.rqstTmr.dt = c.rqstTmr.t1.Sub(c.rqstTmr.t0)
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 }
 
 // AutoRefillRqsts automatically refills rate limit if request counts
@@ -379,13 +379,13 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 		}
 		token.setToken(c.auth.token)
 	}
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	ml, pl, engine := len(method), len(prvt), false
-	if ml >= pl && method[0:pl] == prvt {
+	if ml >= pl && method[:pl] == prvt {
 		rmdr := method[pl+1:]
 		rl := len(rmdr)
 		for _, s := range matchEngineRequest {
-			if sl := len(s); rl >= sl && rmdr[0:sl] == s {
+			if sl := len(s); rl >= sl && rmdr[:sl] == s {
 				engine = true
 				break
 			}
@@ -396,7 +396,7 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 	} else {
 		c.rqstCnt.non++
 	}
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	return c.rpcConn.Call(c.ctx, method, params, result)
 }
 
@@ -410,9 +410,12 @@ func (c *Client) ConvertExchStmp(ts int64) time.Time {
 // ExchangeTime returns the exchange time as
 // a client-side time.Time
 func (c *Client) ExchangeTime() (time.Time, error) {
-	ms, e := c.GetTime()
-	if e != nil {
-		return time.Time{}, e
+	var (
+		ms  int64
+		err error
+	)
+	if ms, err = c.GetTime(); err != nil {
+		return time.Time{}, err
 	}
 	return c.ConvertExchStmp(ms), nil
 }
@@ -437,8 +440,8 @@ func (c *Client) Handle(
 
 // IsConnected returns the WebSocket connection state
 func (c *Client) IsConnected() bool {
-	c.Syncgrp.RLock()
-	defer c.Syncgrp.RUnlock()
+	c.SG.RLock()
+	defer c.SG.RUnlock()
 	return c.isConnected
 }
 
@@ -450,11 +453,11 @@ func (c *Client) IsProduction() bool {
 
 // RefillRqsts will sleep long enough to refill all rate limits
 func (c *Client) RefillRqsts() {
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	m, n := c.Acct.Lmts.MatchingEngine, c.Acct.Lmts.NonMatchingEngine
 	mb, nb := c.Acct.Lmts.MatchingEngineBurst, c.Acct.Lmts.NonMatchingEngineBurst
 	if m <= 0 || n <= 0 || mb <= 0 || nb <= 0 {
-		c.Syncgrp.Unlock()
+		c.SG.Unlock()
 		return
 	}
 	const (
@@ -463,19 +466,19 @@ func (c *Client) RefillRqsts() {
 	)
 	tmch := float64(c.rqstCnt.mch) / float64(m) * fnanosecs
 	tnon := float64(c.rqstCnt.non) / float64(n) * fnanosecs
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	c.updtRqstTmr()
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	ub := imin(mb/m, nb/n) // seconds
 	tacm := trunc(min(float64(ub), c.rqstTmr.dt.Seconds())) * fnanosecs
 	tnet := time.Duration(max(tmch, tnon) - tacm) // Nanoseconds
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	if tnet > minSleepTm {
 		time.Sleep(tnet)
 		c.resetRqstTmr()
-		c.Syncgrp.Lock()
+		c.SG.Lock()
 		c.rqstCnt.mch, c.rqstCnt.non = 0, 0
-		c.Syncgrp.Unlock()
+		c.SG.Unlock()
 	}
 }
 
@@ -495,26 +498,26 @@ func (c *Client) RqstCnts() (cntMch, cntNon int) {
 
 // SubscribeToChannels subscribes to channels
 func (c *Client) SubscribeToChannels(channels []string) (e error) {
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	c.subscriptions = append(c.subscriptions, channels...)
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	if e = c.subscribe(channels); e != nil {
 		return e
 	}
 	// Remove any dupes in c.subscriptions
-	c.Syncgrp.Lock()
+	c.SG.Lock()
 	l := len(c.subscriptionsMap)
 	if cap(c.subscriptions) < l {
 		c.subscriptions = make([]string, l)
 	} else {
-		c.subscriptions = c.subscriptions[0:l]
+		c.subscriptions = c.subscriptions[:l]
 	}
 	i := 0
 	for s := range c.subscriptionsMap {
 		c.subscriptions[i] = s
 		i++
 	}
-	c.Syncgrp.Unlock()
+	c.SG.Unlock()
 	return nil
 }
 
