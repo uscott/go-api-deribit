@@ -183,7 +183,6 @@ func (c *Client) createLogger() error {
 		dir, logFilePath, testprod string
 		err                        error
 		logFile                    *os.File
-		sb                         strings.Builder
 	)
 	if c.production {
 		dir = "log-prod/"
@@ -196,10 +195,8 @@ func (c *Client) createLogger() error {
 	_ = os.Chmod(dir, 0754)
 	if c.UseLogFile {
 		stamp := tm.Format2(tm.UTC())
-		sb.WriteString(
-			fmt.Sprintf("%v%v-%v-%v.%v", dir, "api-log", testprod, stamp, "log"))
-		logFilePath = strings.ReplaceAll(sb.String(), " ", "-")
-		sb.Reset()
+		s := fmt.Sprintf("%v%v-%v-%v.%v", dir, "api-log", testprod, stamp, "log")
+		logFilePath = strings.ReplaceAll(s, " ", "-")
 		logFilePath = strings.ReplaceAll(logFilePath, ":", "")
 		logFile, err = os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 		if err != nil {
