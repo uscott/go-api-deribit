@@ -428,6 +428,7 @@ func (c *Client) Handle(
 		if req.Params != nil && len(*req.Params) > 0 {
 			var event Event
 			if err := json.Unmarshal(*req.Params, &event); err != nil {
+				go c.Logger.Println(err.Error())
 				return
 			}
 			_, err := c.subscriptionsProcess(&event)
