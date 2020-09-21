@@ -49,11 +49,15 @@ type ClientExtended struct {
 
 // NewClientMin makes a pointer to a new ClientExtended
 // with a minimum of initiatialization
-func NewClientMin(cfg *Configuration) *ClientExtended {
-	var c ClientExtended
-	c.Client = New(cfg)
+func NewClientMin(cfg *Configuration) (*ClientExtended, error) {
+	var (
+		c   ClientExtended
+		err error
+	)
+	if c.Client, err = New(cfg); err != nil {
+		return &c, err
+	}
 	c.Buffer = bytes.NewBuffer(make([]byte, 512))
-	c.Ccy = BTC
 	c.Futures = make(map[string]FuturesData)
 	c.Deltas = make(map[string]float64)
 	c.BkSummary = make(map[string]inout.BkSummaryOut)
@@ -66,23 +70,24 @@ func NewClientMin(cfg *Configuration) *ClientExtended {
 	c.Tckr = make(map[string]inout.TckrOut)
 	c.ConSz = make(map[string]float64)
 	c.UserTrades = make(map[string][]inout.UserTrade)
-	return &c
+	return &c, nil
 }
 
 // NewClientExtended returns pointer to a new ClientExtended
-func NewClientExtended(cfg *Configuration) *ClientExtended {
-	c := NewClientMin(cfg)
-	c.UpdtFutures()
-	var err error
+func NewClientExtended(cfg *Configuration) (*ClientExtended, error) {
+	c, err := NewClientMin(cfg)
+	if err = c.UpdtFutures(); err != nil {
+		return c, err
+	}
 	for k, v := range c.Futures {
 		c.IsSwap[k] = v.IsSwap
 		c.TckSz[k] = v.TckSz
 		c.ConSz[k], err = c.GetContractSize(k)
 		if err != nil {
-			fmt.Println(err)
+			return c, err
 		}
 	}
-	return c
+	return c, nil
 }
 
 func (c *ClientExtended) addSubs(
