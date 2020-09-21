@@ -15,7 +15,7 @@ import (
 	"github.com/chuckpreslar/emission"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/uscott/go-api-deribit/inout"
-	"github.com/uscott/go-syncgrp"
+	syncgrp "github.com/uscott/go-syncgrp"
 	"github.com/uscott/go-tools/errs"
 	"github.com/uscott/go-tools/tm"
 	"github.com/uscott/go-tools/tmath"
@@ -116,13 +116,14 @@ type Client struct {
 	Ccy              string
 	DebugMode        bool
 	Logger           *log.Logger
-	StartTime        time.Time
 	SG               *syncgrp.SyncGrp
+	StartTime        time.Time
+	Sub              *Subordinate
 	UseLogFile       bool
 }
 
 // New returns pointer to new Client
-func New(cfg *Configuration) *Client {
+func New(cfg *Configuration) (*Client, error) {
 	ctx := cfg.Ctx
 	if ctx == nil {
 		ctx = context.Background()
@@ -139,19 +140,23 @@ func New(cfg *Configuration) *Client {
 		Ccy:              cfg.Currency,
 		DebugMode:        cfg.DebugMode,
 		SG:               syncgrp.New(),
+		Sub:              NewSubordinate(),
 		UseLogFile:       cfg.UseLogFile,
 	}
 	c.StartTime = tm.UTC()
 	var err error
 	if err = c.createLogger(); err != nil {
 		log.Fatalln(err.Error())
+		return c, err
 	}
 	if err = c.start(); err != nil {
 		c.Logger.Fatalln(err.Error())
+		return c, err
 	}
 	c.rqstTmr = rqstTmrData{t0: c.StartTime, t1: c.StartTime, dt: 0}
 	if err = c.GetAccountSummary(c.Ccy, true, &c.Acct); err != nil {
 		go c.Logger.Println(err.Error())
+		return c, err
 	}
 	var ub float64
 	ub = clamp(
@@ -165,7 +170,7 @@ func New(cfg *Configuration) *Client {
 		float64(c.Acct.Lmts.NonMatchingEngine))
 	c.autoRefill.non = int(math.Floor(ub))
 	c.resetRqstTmr()
-	return c
+	return c, nil
 }
 
 func (c *Client) connect() (*websocket.Conn, *http.Response, error) {
