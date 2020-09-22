@@ -123,11 +123,9 @@ func (c *Client) NewMinimal(cfg *Configuration) (err error) {
 		cfg.Ctx = context.Background()
 	}
 	c.Config = cfg
-	if c.Logger == nil {
-		if err = c.CreateLogger(); err != nil {
-			log.Println(err.Error())
-			return err
-		}
+	if err = c.CreateLogger(); err != nil {
+		log.Println(err.Error())
+		return err
 	}
 	if c.emitter == nil {
 		c.emitter = emission.NewEmitter()
