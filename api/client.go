@@ -175,15 +175,16 @@ func (c *Client) New(cfg *Configuration) (err error) {
 		return err
 	}
 	var ub float64
+	lmts := &c.Acct.Limits
 	ub = clamp(
-		float64(c.Acct.Lmts.MatchingEngine)*cfg.AutoRefillMatch,
+		float64(lmts.MatchingEngine.Rate)*cfg.AutoRefillMatch,
 		0,
-		float64(c.Acct.Lmts.MatchingEngine))
+		float64(lmts.MatchingEngine.Rate))
 	c.autoRefill.mch = int(math.Floor(ub))
 	ub = clamp(
-		float64(c.Acct.Lmts.NonMatchingEngine)*cfg.AutoRefillNonmatch,
+		float64(lmts.NonMatchingEngine.Rate)*cfg.AutoRefillNonmatch,
 		0,
-		float64(c.Acct.Lmts.NonMatchingEngine))
+		float64(lmts.NonMatchingEngine.Rate))
 	c.autoRefill.non = int(math.Floor(ub))
 	c.resetRqstTmr()
 	return nil
@@ -233,8 +234,9 @@ func (c *Client) CreateLogger() error {
 func (c *Client) decrementRqstCnt(nsecs int) {
 	if nsecs > 0 {
 		c.SG.Lock()
-		c.rqstCnt.mch = imax(0, c.rqstCnt.mch-nsecs*c.Acct.Lmts.MatchingEngine)
-		c.rqstCnt.non = imax(0, c.rqstCnt.non-nsecs*c.Acct.Lmts.NonMatchingEngine)
+		lmts := &c.Acct.Limits
+		c.rqstCnt.mch = imax(0, c.rqstCnt.mch-nsecs*lmts.MatchingEngine.Rate)
+		c.rqstCnt.non = imax(0, c.rqstCnt.non-nsecs*lmts.NonMatchingEngine.Rate)
 		c.SG.Unlock()
 	}
 }
@@ -473,8 +475,9 @@ func (c *Client) IsProduction() bool {
 // RefillRqsts will sleep long enough to refill all rate limits
 func (c *Client) RefillRqsts() {
 	c.SG.Lock()
-	m, n := c.Acct.Lmts.MatchingEngine, c.Acct.Lmts.NonMatchingEngine
-	mb, nb := c.Acct.Lmts.MatchingEngineBurst, c.Acct.Lmts.NonMatchingEngineBurst
+	lmts := &c.Acct.Limits
+	m, n := lmts.MatchingEngine.Rate, lmts.NonMatchingEngine.Rate
+	mb, nb := lmts.MatchingEngine.Burst, lmts.NonMatchingEngine.Burst
 	if m <= 0 || n <= 0 || mb <= 0 || nb <= 0 {
 		c.SG.Unlock()
 		return

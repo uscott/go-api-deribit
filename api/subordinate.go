@@ -13,7 +13,7 @@ type Subordinate struct {
 }
 
 func NewSubordinate() *Subordinate {
-	s := &Subordinate{}
+	s := new(Subordinate)
 	s.ChError = make(chan error)
 	s.ChDone = make(chan bool)
 	return s

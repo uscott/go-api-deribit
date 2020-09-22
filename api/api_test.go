@@ -1,42 +1,34 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/uscott/go-api-deribit/inout"
 )
 
 var (
-	client *ClientExtended
+	client *Client
 )
 
-func newClient() *Client {
+func newClient() (*Client, error) {
 	return New(DfltCnfg())
 }
 
-func newClientExt() *ClientExtended {
-	return NewClientExtended(DfltCnfg())
-}
-
 func TestClientCreate(t *testing.T) {
-	if newClient() != nil {
-		fmt.Println("New Client succesfully created")
-	}
-	client = newClientExt()
-	if client != nil {
-		fmt.Println("New ClientExtended successfully created")
+	var err error
+	client, err = newClient()
+	if err != nil {
+		t.Fatal(err.Error())
 	}
 }
 
 func TestGetAcct(t *testing.T) {
-	cl := newClient()
-	if err := cl.GetAccountSummary(BTC, true, &cl.Acct); err != nil {
-		t.FailNow()
+	if err := client.GetAccountSummary(BTC, true, &client.Acct); err != nil {
+		t.Fatal(err.Error())
 	}
+	t.Logf("%+v\n", client.Acct)
 }
 
 func TestTime(t *testing.T) {
@@ -47,93 +39,6 @@ func TestTime(t *testing.T) {
 	fmt.Printf("%v\n", tm.Format(time.RFC3339))
 	fmt.Printf("%v\n", time.Now().Format(time.RFC3339))
 	fmt.Printf("%v\n", time.Now().UTC().Format(time.RFC3339))
-}
-
-func TestUpdtPosition(t *testing.T) {
-	c := client
-	c.UpdtFutures()
-	for _, k := range c.Contracts {
-		if err := c.UpdtPosition(k); err != nil {
-			t.Failed()
-		}
-	}
-}
-
-func TestTest(t *testing.T) {
-	result, err := client.Test()
-	assert.Nil(t, err)
-	resjson, err := json.MarshalIndent(result, "", "")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("Test:")
-	fmt.Println(string(resjson))
-}
-
-func TestGetBookSummaryByCurrency(t *testing.T) {
-	c := client
-	params := &inout.BkSummaryByCcyIn{
-		Ccy:  BTC,
-		Kind: "future",
-	}
-	result, err := c.GetBkSummaryByCurrency(params)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	resjson, err := json.MarshalIndent(result, "", "")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	fmt.Println("Book Summary By Currency:")
-	fmt.Println(params.Ccy)
-	fmt.Println(string(resjson))
-}
-
-func TestGetBookSummaryByInstrument(t *testing.T) {
-	c := client
-	// c := newClient()
-	params := &inout.BkSummaryByInstrmtIn{
-		Instrument: Swap,
-	}
-	result, err := c.GetBkSummaryByInstrument(params)
-	if err != nil {
-		t.Error(err)
-	}
-	resjson, err := json.MarshalIndent(result, "", "")
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println("Book Summary By Instrument:")
-	fmt.Println(params.Instrument)
-	fmt.Println(string(resjson))
-}
-
-func TestJsonOmitempty(t *testing.T) {
-	params := &inout.OrderIn{
-		Instrument: "BTC-PERPETUAL",
-		Amt:        10,
-		//Prc:          6000.0,
-		Type:    "limit",
-		TmInFrc: "good_til_cancelled",
-		MaxShow: Float64Pointer(10.0),
-	}
-	data, err := json.Marshal(params)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println(string(data))
-}
-
-func TestGetInstrument(t *testing.T) {
-	c := client
-	instruments, err := c.GetInstruments(
-		&inout.InstrumentIn{Ccy: c.Ccy, Kind: "future", Expired: false})
-	if err != nil {
-		t.FailNow()
-	}
-	fmt.Printf("%+v\n", instruments)
 }
 
 func TestClientSubscribe(t *testing.T) {
