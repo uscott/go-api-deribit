@@ -55,7 +55,7 @@ func (c *Client) subscriptionsProcess(event *Event) (*emission.Emitter, error) {
 			ordr, usrOrdr := inout.Order{}, inout.NtfctnUserOrdr{}
 			err := jsoniter.Unmarshal(event.Data, &ordr)
 			if err != nil {
-				if c.DebugMode {
+				if c.Config.DebugMode {
 					c.Logger.Println(string(event.Data))
 					c.Logger.Println(err.Error())
 				}
@@ -76,7 +76,7 @@ func (c *Client) subscriptionsProcess(event *Event) (*emission.Emitter, error) {
 	}
 	err = jsoniter.Unmarshal(event.Data, &notification)
 	if err != nil {
-		if c.DebugMode {
+		if c.Config.DebugMode {
 			c.Logger.Println(string(event.Data))
 			c.Logger.Println(err.Error())
 		}
@@ -87,7 +87,7 @@ func (c *Client) subscriptionsProcess(event *Event) (*emission.Emitter, error) {
 
 // TODO: Replace the huge-ass chain of if-else with a switch statement
 func (c *Client) subscriptionsProcessOld(event *Event) {
-	if c.DebugMode {
+	if c.Config.DebugMode {
 		c.Logger.Printf("Channel: %v %v", event.Channel, string(event.Data))
 	}
 	if event.Channel == "announcements" {

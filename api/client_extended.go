@@ -120,7 +120,7 @@ func (c *ClientExtended) CreateSymbols() {
 	}
 	sort.StringSlice(c.Contracts).Sort()
 	c.Symbols = make([]string, len(c.Contracts)+1)
-	c.Symbols[0] = c.Ccy
+	c.Symbols[0] = c.Config.Currency
 	copy(c.Symbols[1:], c.Contracts)
 	c.SymbolMap.Fwd = make(map[string]string)
 	c.SymbolMap.Inv = make(map[string]string)
@@ -135,7 +135,7 @@ func (c *ClientExtended) CreateSymbols() {
 func (c *ClientExtended) MakeSubscriptions() []string {
 	channels := make([]string, 0, 128)
 	// Book
-	// book.(instrument_name).(interal/"raw")
+	// book.(instrument_name).(interval/"raw")
 	c.addSubs(&channels, "book", "raw")
 	// Price index
 	// deribit_price_index.(index_name)
@@ -153,7 +153,7 @@ func (c *ClientExtended) MakeSubscriptions() []string {
 	c.addSubs(&channels, "user.orders", "raw")
 	// User portfolio:
 	// user.portfolio.(currency)
-	channels = append(channels, "user.portfolio."+c.Ccy)
+	channels = append(channels, fmt.Sprintf("user.portfolio.%v", c.Config.Currency))
 	// User trades:
 	// user.trades.(instrument_name).(interval/"raw")
 	c.addSubs(&channels, "user.trades", "raw")
@@ -162,7 +162,7 @@ func (c *ClientExtended) MakeSubscriptions() []string {
 
 // UpdtAcct updates account summary
 func (c *ClientExtended) UpdtAcct() error {
-	return c.GetAccountSummary(c.Ccy, true, &c.Acct)
+	return c.GetAccountSummary(c.Config.Currency, true, &c.Acct)
 }
 
 // UpdtBalance updates balance in BTC
@@ -188,7 +188,7 @@ func (c *ClientExtended) UpdtBalance() error {
 		}
 	}
 	c.Blnc.Crnt.Theo.Ccy = c.Blnc.Crnt.Theo.USD / s
-	c.Deltas[c.Ccy] = c.Blnc.Crnt.Theo.Ccy
+	c.Deltas[c.Config.Currency] = c.Blnc.Crnt.Theo.Ccy
 	return nil
 }
 
@@ -205,8 +205,9 @@ func (c *ClientExtended) UpdtBkSummary(contract string) error {
 
 // UpdtFutures updates futures info map
 func (c *ClientExtended) UpdtFutures() (err error) {
+	ccy := c.Config.Currency
 	c.Instruments, err = c.GetInstruments(
-		&inout.InstrumentIn{Ccy: c.Ccy, Kind: "future", Expired: false})
+		&inout.InstrumentIn{Ccy: ccy, Kind: "future", Expired: false})
 	if err != nil {
 		return err
 	}
@@ -339,7 +340,7 @@ func (c *ClientExtended) UpdtPosition(contract string) (e error) {
 		return e
 	}
 	c.Posn[contract] = posn
-	if c.DebugMode {
+	if c.Config.DebugMode {
 		fmt.Printf("%v\n", posn.Delta)
 	}
 	c.Deltas[contract] = posn.Delta
@@ -348,7 +349,7 @@ func (c *ClientExtended) UpdtPosition(contract string) (e error) {
 
 // UpdtSpot updates spot price and corresponding field
 func (c *ClientExtended) UpdtSpot() (e error) {
-	c.Spot, e = c.GetIndex(c.Ccy)
+	c.Spot, e = c.GetIndex(c.Config.Currency)
 	if e != nil {
 		return e
 	}

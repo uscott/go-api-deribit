@@ -92,71 +92,87 @@ func DfltCnfg() *Configuration {
 
 // Client is the base client for connecting to the exchange
 type Client struct {
-	ctx  context.Context
-	addr string
 	auth struct {
 		token   string
 		refresh string
 	}
-	autoReconnect    bool
 	autoRefill       rqstCntData
 	conn             *websocket.Conn
 	emitter          *emission.Emitter
 	heartCancel      chan struct{}
 	isConnected      bool
-	key              string
-	production       bool
 	rpcConn          *jsonrpc2.Conn
 	rqstCnt          rqstCntData
 	rqstTmr          rqstTmrData
-	secret           string
 	subscriptions    []string
 	subscriptionsMap map[string]byte
 	Acct             inout.AcctSummaryOut
-	Ccy              string
-	DebugMode        bool
+	Config           *Configuration
 	Logger           *log.Logger
 	SG               *syncgrp.SyncGrp
 	StartTime        time.Time
 	Sub              *Subordinate
-	UseLogFile       bool
+}
+
+func (c *Client) NewMinimal(cfg *Configuration) (err error) {
+	if cfg == nil {
+		return errs.ErrNilPtr
+	}
+	if cfg.Ctx == nil {
+		cfg.Ctx = context.Background()
+	}
+	*c = Client{}
+	c.Config = cfg
+	c.emitter = emission.NewEmitter()
+	c.SG = syncgrp.New()
+	c.Sub = NewSubordinate()
+	c.subscriptionsMap = make(map[string]byte)
+	c.StartTime = tm.UTC()
+	return nil
+}
+
+func NewMinimal(cfg *Configuration) (*Client, error) {
+	if cfg == nil {
+		return nil, errs.ErrNilPtr
+	}
+	var c *Client = new(Client)
+	if err := c.NewMinimal(cfg); err != nil {
+		return c, err
+	}
+	return c, nil
 }
 
 // New returns pointer to new Client
 func New(cfg *Configuration) (*Client, error) {
-	ctx := cfg.Ctx
-	if ctx == nil {
-		ctx = context.Background()
+	if cfg == nil {
+		return nil, errs.ErrNilPtr
 	}
-	c := &Client{
-		ctx:              ctx,
-		addr:             cfg.Address,
-		autoReconnect:    cfg.AutoReconnect,
-		emitter:          emission.NewEmitter(),
-		key:              cfg.Key,
-		production:       cfg.Production,
-		secret:           cfg.Secret,
-		subscriptionsMap: make(map[string]byte),
-		Ccy:              cfg.Currency,
-		DebugMode:        cfg.DebugMode,
-		SG:               syncgrp.New(),
-		Sub:              NewSubordinate(),
-		UseLogFile:       cfg.UseLogFile,
+	var (
+		c   *Client = new(Client)
+		err error
+	)
+	if err = c.New(cfg); err != nil {
+		return c, err
 	}
-	c.StartTime = tm.UTC()
-	var err error
-	if err = c.createLogger(); err != nil {
+	return c, nil
+}
+
+func (c *Client) New(cfg *Configuration) (err error) {
+	if err = c.NewMinimal(cfg); err != nil {
+		return err
+	}
+	if err = c.CreateLogger(); err != nil {
 		log.Fatalln(err.Error())
-		return c, err
+		return err
 	}
-	if err = c.start(); err != nil {
+	if err = c.Start(); err != nil {
 		c.Logger.Fatalln(err.Error())
-		return c, err
+		return err
 	}
 	c.rqstTmr = rqstTmrData{t0: c.StartTime, t1: c.StartTime, dt: 0}
-	if err = c.GetAccountSummary(c.Ccy, true, &c.Acct); err != nil {
+	if err = c.GetAccountSummary(c.Config.Currency, true, &c.Acct); err != nil {
 		go c.Logger.Println(err.Error())
-		return c, err
+		return err
 	}
 	var ub float64
 	ub = clamp(
@@ -170,26 +186,26 @@ func New(cfg *Configuration) (*Client, error) {
 		float64(c.Acct.Lmts.NonMatchingEngine))
 	c.autoRefill.non = int(math.Floor(ub))
 	c.resetRqstTmr()
-	return c, nil
+	return nil
 }
 
-func (c *Client) connect() (*websocket.Conn, *http.Response, error) {
+func (c *Client) Connect() (*websocket.Conn, *http.Response, error) {
 	ctx, cncl := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cncl()
-	conn, resp, err := websocket.Dial(ctx, c.addr, &websocket.DialOptions{})
+	conn, resp, err := websocket.Dial(ctx, c.Config.Address, &websocket.DialOptions{})
 	if err == nil {
 		conn.SetReadLimit(32768 * 64)
 	}
 	return conn, resp, err
 }
 
-func (c *Client) createLogger() error {
+func (c *Client) CreateLogger() error {
 	var (
 		dir, logFilePath, testprod string
 		err                        error
 		logFile                    *os.File
 	)
-	if c.production {
+	if c.Config.Production {
 		dir = "log-prod/"
 		testprod = "prod"
 	} else {
@@ -198,7 +214,7 @@ func (c *Client) createLogger() error {
 	}
 	_ = os.Mkdir(dir, os.ModeDir)
 	_ = os.Chmod(dir, 0754)
-	if c.UseLogFile {
+	if c.Config.UseLogFile {
 		stamp := tm.Format2(tm.UTC())
 		s := fmt.Sprintf("%v%v-%v-%v.%v", dir, "api-log", testprod, stamp, "log")
 		logFilePath = strings.ReplaceAll(s, " ", "-")
@@ -235,14 +251,14 @@ func (c *Client) heartbeat() {
 	}
 }
 
-func (c *Client) reconnect() {
+func (c *Client) Reconnect() {
 	notify := c.rpcConn.DisconnectNotify()
 	<-notify
 	c.setIsConnected(false)
 	c.Logger.Println("disconnect, reconnect...")
 	close(c.heartCancel)
 	time.Sleep(4 * time.Second)
-	if err := c.start(); err != nil {
+	if err := c.Start(); err != nil {
 		go c.Logger.Println(err.Error())
 	}
 }
@@ -262,13 +278,13 @@ func (c *Client) setIsConnected(state bool) {
 	c.SG.RWUnlock()
 }
 
-func (c *Client) start() (err error) {
+func (c *Client) Start() (err error) {
 	c.setIsConnected(false)
 	c.subscriptionsMap = make(map[string]byte)
 	c.conn, c.rpcConn = nil, nil
 	c.heartCancel = make(chan struct{})
 	for i := 0; i < MaxTries; i++ {
-		conn, _, err := c.connect()
+		conn, _, err := c.Connect()
 		if err != nil {
 			c.Logger.Println(err.Error())
 			tm := time.Duration(i+1) * 5 * time.Second
@@ -286,8 +302,8 @@ func (c *Client) start() (err error) {
 		context.Background(), NewObjectStream(c.conn), c)
 	c.setIsConnected(true)
 	// auth
-	if c.key != "" && c.secret != "" {
-		if err = c.Auth(c.key, c.secret); err != nil {
+	if c.Config.Key != "" && c.Config.Secret != "" {
+		if err = c.Auth(c.Config.Key, c.Config.Secret); err != nil {
 			return err
 		}
 	}
@@ -299,8 +315,8 @@ func (c *Client) start() (err error) {
 	if err != nil {
 		return err
 	}
-	if c.autoReconnect {
-		go c.reconnect()
+	if c.Config.AutoReconnect {
+		go c.Reconnect()
 	}
 	go c.heartbeat()
 	return nil
@@ -399,7 +415,7 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 		c.rqstCnt.non++
 	}
 	c.SG.Unlock()
-	return c.rpcConn.Call(c.ctx, method, params, result)
+	return c.rpcConn.Call(c.Config.Ctx, method, params, result)
 }
 
 // ConvertExchStmp converts an exchange time stamp
@@ -451,7 +467,7 @@ func (c *Client) IsConnected() bool {
 // IsProduction returns whether the client is connected
 // to the production server
 func (c *Client) IsProduction() bool {
-	return c.production
+	return c.Config.Production
 }
 
 // RefillRqsts will sleep long enough to refill all rate limits
