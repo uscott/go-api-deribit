@@ -62,7 +62,7 @@ type Event struct {
 // a client
 type Configuration struct {
 	Ctx                context.Context
-	Address            string  `json:"addr"`
+	Address            string  `json:"address"`
 	AutoReconnect      bool    `json:"autoReconnect"`
 	AutoRefillMatch    float64 `json:"auto_refill_match"`
 	AutoRefillNonmatch float64 `json:"auto_refill_nonmatch"`
