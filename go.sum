@@ -45,6 +45,8 @@ github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLY
 github.com/uscott/go-api-deribit v1.0.4-0.20200921214838-d29df8552e46/go.mod h1:WSYnsSNbbFMzE2ZrtOu7IFERlPKAxCW/QgG9Nihqdxs=
 github.com/uscott/go-restarter v0.0.0-20200922094733-71370878ecd7 h1:2Xu+VE4idewr57PHAONKUifSbsDxFkwiwG0gW0+Ox3U=
 github.com/uscott/go-restarter v0.0.0-20200922094733-71370878ecd7/go.mod h1:f8o0mP2z50Smrl6IBjdQSu9ZJBelxO1sTny+Dui6ROU=
+github.com/uscott/go-restarter v0.0.0-20200922170403-42887c3ed4ae h1:FAMopLT3zqD1KJrzjnVrFGp/Y9v0V6PPmr3q1WjvSBo=
+github.com/uscott/go-restarter v0.0.0-20200922170403-42887c3ed4ae/go.mod h1:f8o0mP2z50Smrl6IBjdQSu9ZJBelxO1sTny+Dui6ROU=
 github.com/uscott/go-syncgrp v0.0.0-20200627064328-c8918ddde48f h1:V6N7U0FeIsY1FuxCIO6x0m93svzUvFLd2+FKAl6O+IY=
 github.com/uscott/go-syncgrp v0.0.0-20200627064328-c8918ddde48f/go.mod h1:+DHLKNkN8k5D+btyK3nsvWN/99Fj3K+RjQ2k7XWJfH8=
 github.com/uscott/go-tools v0.0.0-20200919035648-ce3f66bcd161 h1:FdtYzvpJXcTTyAOEwab9l62lrfELNYZLSkUHiB+dakw=

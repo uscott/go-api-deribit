@@ -251,7 +251,7 @@ func (c *Client) DebugPrintf(format string, a ...interface{}) {
 		_, f, l, ok := runtime.Caller(1)
 		if ok {
 			prefix = c.Logger.Prefix()
-			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v line: %d", prefix, f, l))
+			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\nline: %d\n", prefix, f, l))
 		}
 		c.Logger.Printf(format, a...)
 		if ok {
@@ -268,7 +268,7 @@ func (c *Client) DebugPrintln(a ...interface{}) {
 		_, f, l, ok := runtime.Caller(1)
 		if ok {
 			prefix = c.Logger.Prefix()
-			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v line: %d", prefix, f, l))
+			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\nline: %d\n", prefix, f, l))
 		}
 		c.Logger.Println(a...)
 		if ok {
