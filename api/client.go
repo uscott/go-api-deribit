@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -243,13 +244,35 @@ func (c *Client) CreateLogger() error {
 
 func (c *Client) DebugPrintf(format string, a ...interface{}) {
 	if c.Config.DebugMode {
+		c.SG.Lock()
+		defer c.SG.Unlock()
+		var prefix string
+		_, f, l, ok := runtime.Caller(1)
+		if ok {
+			prefix = c.Logger.Prefix()
+			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v line: %d", prefix, f, l))
+		}
 		c.Logger.Printf(format, a...)
+		if ok {
+			c.Logger.SetPrefix(prefix)
+		}
 	}
 }
 
 func (c *Client) DebugPrintln(a ...interface{}) {
 	if c.Config.DebugMode {
+		c.SG.Lock()
+		defer c.SG.Unlock()
+		var prefix string
+		_, f, l, ok := runtime.Caller(1)
+		if ok {
+			prefix = c.Logger.Prefix()
+			c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v line: %d", prefix, f, l))
+		}
 		c.Logger.Println(a...)
+		if ok {
+			c.Logger.SetPrefix(prefix)
+		}
 	}
 }
 
