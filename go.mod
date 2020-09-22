@@ -7,6 +7,7 @@ require (
 	github.com/json-iterator/go v1.1.10
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/stretchr/testify v1.4.0
+	github.com/uscott/go-restarter v0.0.0-20200922094733-71370878ecd7 // indirect
 	github.com/uscott/go-syncgrp v0.0.0-20200627064328-c8918ddde48f
 	github.com/uscott/go-tools v0.0.0-20200919035648-ce3f66bcd161
 	nhooyr.io/websocket v1.8.6

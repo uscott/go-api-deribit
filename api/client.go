@@ -141,6 +141,9 @@ func (c *Client) NewMinimal(cfg *Configuration) (err error) {
 	if c.subscriptionsMap == nil {
 		c.subscriptionsMap = make(map[string]byte)
 	}
+	if c.heartCancel == nil {
+		c.heartCancel = make(chan struct{})
+	}
 	c.StartTime = tm.UTC()
 	return nil
 }
