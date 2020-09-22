@@ -122,6 +122,12 @@ func (c *Client) NewMinimal(cfg *Configuration) (err error) {
 		cfg.Ctx = context.Background()
 	}
 	c.Config = cfg
+	if c.Logger == nil {
+		if err = c.CreateLogger(); err != nil {
+			log.Println(err.Error())
+			return err
+		}
+	}
 	if c.emitter == nil {
 		c.emitter = emission.NewEmitter()
 	}
@@ -168,12 +174,8 @@ func (c *Client) New(cfg *Configuration) (err error) {
 	if err = c.NewMinimal(cfg); err != nil {
 		return err
 	}
-	if err = c.CreateLogger(); err != nil {
-		log.Fatalln(err.Error())
-		return err
-	}
 	if err = c.Start(); err != nil {
-		c.Logger.Fatalln(err.Error())
+		c.Logger.Println(err.Error())
 		return err
 	}
 	c.rqstTmr = rqstTmrData{t0: c.StartTime, t1: c.StartTime, dt: 0}
@@ -234,8 +236,21 @@ func (c *Client) CreateLogger() error {
 	} else {
 		logFile = os.Stdout
 	}
-	c.Logger = log.New(logFile, "", log.LstdFlags|log.Lshortfile|log.LUTC|log.Lmsgprefix)
+	lflags := log.LstdFlags | log.LUTC | log.Lmsgprefix
+	c.Logger = log.New(logFile, "", lflags)
 	return nil
+}
+
+func (c *Client) DebugPrintf(format string, a ...interface{}) {
+	if c.Config.DebugMode {
+		c.Logger.Printf(format, a...)
+	}
+}
+
+func (c *Client) DebugPrintln(a ...interface{}) {
+	if c.Config.DebugMode {
+		c.Logger.Println(a...)
+	}
 }
 
 func (c *Client) decrementRqstCnt(nsecs int) {
