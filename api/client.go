@@ -121,12 +121,19 @@ func (c *Client) NewMinimal(cfg *Configuration) (err error) {
 	if cfg.Ctx == nil {
 		cfg.Ctx = context.Background()
 	}
-	*c = Client{}
 	c.Config = cfg
-	c.emitter = emission.NewEmitter()
-	c.SG = syncgrp.New()
-	c.Sub = NewSubordinate()
-	c.subscriptionsMap = make(map[string]byte)
+	if c.emitter == nil {
+		c.emitter = emission.NewEmitter()
+	}
+	if c.SG == nil {
+		c.SG = syncgrp.New()
+	}
+	if c.Sub == nil {
+		c.Sub = NewSubordinate()
+	}
+	if c.subscriptionsMap == nil {
+		c.subscriptionsMap = make(map[string]byte)
+	}
 	c.StartTime = tm.UTC()
 	return nil
 }
@@ -246,7 +253,7 @@ func (c *Client) heartbeat() {
 	for {
 		select {
 		case <-t.C:
-			c.Test()
+			_, _ = c.Test()
 		case <-c.heartCancel:
 			return
 		}
