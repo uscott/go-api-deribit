@@ -64,12 +64,12 @@ func ConvertSymbol(s string) string {
 // returns +/- Big
 func Inverse(x float64) float64 {
 	switch {
-	case math.Abs(x) > Small:
+	case math.Abs(x) > SMALL:
 		return 1.0 / x
 	case x > 0:
-		return Big
+		return BIG
 	default:
-		return -Big
+		return -BIG
 	}
 }
 

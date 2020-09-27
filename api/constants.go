@@ -2,22 +2,22 @@ package api
 
 // Various constants
 const (
-	Big           = OneMillion * OneMillion
+	BIG           = OneMillion * OneMillion
 	Bit           = 100 * Satoshi
-	Bp            = Pct * Pct // one basis point
+	BP            = PCT * PCT // one basis point
 	BTC           = "BTC"
 	Edp           = "edp"
 	ETH           = "ETH"
-	Huge          = Big * Big
+	HUGE          = BIG * BIG
 	OneMillion    = OneThousand * OneThousand
 	OneThousand   = 1000
-	Pct           = 0.01
+	PCT           = 0.01
 	Satoshi       = 1.0 / (100 * OneMillion)
 	SecondsInDay  = 3600 * 24
 	SecondsInYear = 365 * SecondsInDay
-	Small         = 1.0 / Big
-	Swap          = "BTC-PERPETUAL"
-	Tiny          = 1.0 / Huge
+	SMALL         = 1.0 / BIG
+	BTCSWAP       = "BTC-PERPETUAL"
+	TINY          = 1.0 / HUGE
 )
 
 // Direction direction, `buy` or `sell`
