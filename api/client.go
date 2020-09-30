@@ -243,7 +243,7 @@ func (c *Client) CreateLogger() error {
 	return nil
 }
 
-func (c *Client) DebugPrintf(file, line bool, format string, a ...interface{}) {
+func (c *Client) DebugPrintf(format string, a ...interface{}) {
 	if c.Config.DebugMode {
 		c.SG.Lock()
 		defer c.SG.Unlock()
@@ -251,24 +251,22 @@ func (c *Client) DebugPrintf(file, line bool, format string, a ...interface{}) {
 		_, f, l, ok := runtime.Caller(1)
 		if ok {
 			prefix = c.Logger.Prefix()
-			switch {
-			case file && line:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\nline: %d\n", prefix, f, l))
-			case file:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\n", prefix, f))
-			case line:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nline: %d\n", prefix, l))
-			default:
+			for i := len(f) - 1; i > 0; i-- {
+				if f[i] == '/' {
+					f = f[i+1:]
+					break
+				}
 			}
+			c.Logger.SetPrefix(fmt.Sprintf("%v\n%v: %d: ", prefix, f, l))
 		}
 		c.Logger.Printf(format, a...)
-		if ok && (file || line) {
+		if ok {
 			c.Logger.SetPrefix(prefix)
 		}
 	}
 }
 
-func (c *Client) DebugPrintln(file, line bool, a ...interface{}) {
+func (c *Client) DebugPrintln(a ...interface{}) {
 	if c.Config.DebugMode {
 		c.SG.Lock()
 		defer c.SG.Unlock()
@@ -276,18 +274,16 @@ func (c *Client) DebugPrintln(file, line bool, a ...interface{}) {
 		_, f, l, ok := runtime.Caller(1)
 		if ok {
 			prefix = c.Logger.Prefix()
-			switch {
-			case file && line:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\nline: %d\n", prefix, f, l))
-			case file:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nfile: %v\n", prefix, f))
-			case line:
-				c.Logger.SetPrefix(fmt.Sprintf("%v\nline: %d\n", prefix, l))
-			default:
+			for i := len(f) - 1; i > 0; i-- {
+				if f[i] == '/' {
+					f = f[i+1:]
+					break
+				}
 			}
+			c.Logger.SetPrefix(fmt.Sprintf("%v\n%v: %d: ", prefix, f, l))
 		}
 		c.Logger.Println(a...)
-		if ok && (file || line) {
+		if ok {
 			c.Logger.SetPrefix(prefix)
 		}
 	}
