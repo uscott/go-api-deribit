@@ -11,6 +11,8 @@ import (
 )
 
 func (c *Client) subscriptionsProcess(event *Event) (*emission.Emitter, error) {
+	c.SG.Lock()
+	defer c.SG.Unlock()
 	var (
 		notification interface{}
 		err          error

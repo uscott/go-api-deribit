@@ -22,10 +22,12 @@ const (
 )
 
 func (c *Client) rmvChannels(channels []string) {
+	c.SG.Lock()
 	for _, s := range channels {
 		slice.StrSlcRm(&c.subscriptions, s)
 		delete(c.subscriptionsMap, s)
 	}
+	c.SG.Unlock()
 }
 
 // Subscribe subscribes to given channels

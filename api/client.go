@@ -383,11 +383,11 @@ func (c *Client) Start() (err error) {
 }
 
 func (c *Client) subscribe(channels []string) (e error) {
+	c.SG.Lock()
 	var (
 		pblcChannels []string
 		prvtChannels []string
 	)
-	c.SG.Lock()
 	for _, v := range c.subscriptions {
 		if _, ok := c.subscriptionsMap[v]; ok {
 			continue
@@ -398,8 +398,8 @@ func (c *Client) subscribe(channels []string) (e error) {
 			pblcChannels = append(pblcChannels, v)
 		}
 	}
-	c.SG.Unlock()
 	if len(pblcChannels) > 0 {
+		c.SG.Unlock()
 		_, e = c.SubPblc(pblcChannels)
 		if e != nil {
 			return e
@@ -408,9 +408,9 @@ func (c *Client) subscribe(channels []string) (e error) {
 		for _, v := range pblcChannels {
 			c.subscriptionsMap[v] = 0
 		}
-		c.SG.Unlock()
 	}
 	if len(prvtChannels) > 0 {
+		c.SG.Unlock()
 		_, e = c.SubPrvt(prvtChannels)
 		if e != nil {
 			return e
@@ -419,8 +419,8 @@ func (c *Client) subscribe(channels []string) (e error) {
 		for _, v := range prvtChannels {
 			c.subscriptionsMap[v] = 0
 		}
-		c.SG.Unlock()
 	}
+	c.SG.Unlock()
 	return nil
 }
 
@@ -439,6 +439,8 @@ func (c *Client) AutoRefillRqsts() {
 
 // Call issues JSONRPC v2 calls
 func (c *Client) Call(method string, params interface{}, result interface{}) (err error) {
+	c.SG.Lock()
+	defer c.SG.Unlock()
 	defer func() {
 		if r := recover(); r != nil {
 			err = fmt.Errorf("%v", r)
@@ -457,7 +459,6 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 		}
 		token.setToken(c.auth.token)
 	}
-	c.SG.Lock()
 	ml, pl, engine := len(method), len(prvt), false
 	if ml >= pl && method[:pl] == prvt {
 		rmdr := method[pl+1:]
@@ -474,14 +475,15 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 	} else {
 		c.rqstCnt.non++
 	}
-	c.SG.Unlock()
 	return c.rpcConn.Call(c.Config.Ctx, method, params, result)
 }
 
 // ConvertExchStmp converts an exchange time stamp
 // to a client-side time.Time
 func (c *Client) ConvertExchStmp(ts int64) time.Time {
+	c.SG.Lock()
 	ts *= int64(exchTmStmpUnit) / int64(time.Nanosecond)
+	c.SG.Unlock()
 	return time.Unix(ts/int64(time.Second), ts%int64(time.Second)).UTC()
 }
 
@@ -502,6 +504,8 @@ func (c *Client) ExchangeTime() (time.Time, error) {
 func (c *Client) Handle(
 	ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 
+	c.SG.Lock()
+	defer c.SG.Unlock()
 	if req.Method == "subscription" { // update events
 		if req.Params != nil && len(*req.Params) > 0 {
 			var event Event
@@ -509,7 +513,9 @@ func (c *Client) Handle(
 				go c.Logger.Println(err.Error())
 				return
 			}
+			c.SG.Unlock()
 			_, err := c.subscriptionsProcess(&event)
+			c.SG.Lock()
 			if err != nil {
 				go c.Logger.Println(err.Error())
 			}
@@ -519,8 +525,6 @@ func (c *Client) Handle(
 
 // IsConnected returns the WebSocket connection state
 func (c *Client) IsConnected() bool {
-	c.SG.RLock()
-	defer c.SG.RUnlock()
 	return c.isConnected
 }
 
@@ -552,14 +556,14 @@ func (c *Client) RefillRqsts() {
 	ub := imin(mb/m, nb/n) // seconds
 	tacm := trunc(min(float64(ub), c.rqstTmr.dt.Seconds())) * fnanosecs
 	tnet := time.Duration(max(tmch, tnon) - tacm) // Nanoseconds
-	c.SG.Unlock()
 	if tnet > minSleepTm {
 		time.Sleep(tnet)
+		c.SG.Unlock()
 		c.resetRqstTmr()
 		c.SG.Lock()
 		c.rqstCnt.mch, c.rqstCnt.non = 0, 0
-		c.SG.Unlock()
 	}
+	c.SG.Unlock()
 }
 
 // RefillRqstsCndtnl refills requests if request count
@@ -584,8 +588,8 @@ func (c *Client) SubscribeToChannels(channels []string) (e error) {
 	if e = c.subscribe(channels); e != nil {
 		return e
 	}
-	// Remove any dupes in c.subscriptions
 	c.SG.Lock()
+	// Remove any dupes in c.subscriptions
 	l := len(c.subscriptionsMap)
 	if cap(c.subscriptions) < l {
 		c.subscriptions = make([]string, l)
@@ -603,6 +607,7 @@ func (c *Client) SubscribeToChannels(channels []string) (e error) {
 
 // UnsubscribeFromChannels unsubscribes from channels
 func (c *Client) UnsubscribeFromChannels(channels []string) {
+	c.SG.Lock()
 	var (
 		pblcChannels []string
 		prvtChannels []string
@@ -617,15 +622,20 @@ func (c *Client) UnsubscribeFromChannels(channels []string) {
 		}
 	}
 	if len(pblcChannels) > 0 {
+		c.SG.Unlock()
 		_, err := c.UnsubPblc(pblcChannels)
+		c.SG.Lock()
 		if err != nil {
 			go c.Logger.Println(err.Error())
 		}
 	}
 	if len(prvtChannels) > 0 {
+		c.SG.Unlock()
 		_, err := c.UnsubPrvt(prvtChannels)
+		c.SG.Lock()
 		if err != nil {
 			go c.Logger.Println(err.Error())
 		}
 	}
+	c.SG.Unlock()
 }
