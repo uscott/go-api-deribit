@@ -51,6 +51,16 @@ func TestGetStopHistory(t *testing.T) {
 	for _, h := range hist.Entries {
 		t.Logf("%+v\n", h)
 	}
+	if len(hist.Entries) > 1 {
+		for i := 1; i < len(hist.Entries); i++ {
+			x := hist.Entries[i-1]
+			y := hist.Entries[i]
+			t0 := client.ConvertExchStmp(x.TmStmp)
+			t1 := client.ConvertExchStmp(y.TmStmp)
+			dt := t0.Sub(t1).Minutes()
+			t.Logf("Minutes: %.2f\n", dt)
+		}
+	}
 }
 
 func TestClientSubscribe(t *testing.T) {
