@@ -78,8 +78,8 @@ func (c *Client) GetOpenOrdersByInstrument(
 }
 
 func (c *Client) GetStopOrderHistory(
-	params *inout.StopOrderHistoryIn) (result []inout.StopOrder, err error) {
-	err = c.Call("private/get_stop_order_history", params, &result)
+	params *inout.StopOrderHistoryIn, result *inout.StopOrderHistoryOut) (err error) {
+	err = c.Call("private/get_stop_order_history", params, result)
 	return
 }
 

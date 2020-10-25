@@ -88,6 +88,11 @@ type StopOrderHistoryIn struct {
 	Continuation string `json:"continuation,omitempty"`
 }
 
+type StopOrderHistoryOut struct {
+	Continuation string      `json:"continuation"`
+	Entries      []StopOrder `json:"entries"`
+}
+
 // StopOrder contains info for a submitted stop order
 type StopOrder struct {
 	Trigger    string  `json:"trigger"`

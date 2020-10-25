@@ -43,11 +43,12 @@ func TestTime(t *testing.T) {
 
 func TestGetStopHistory(t *testing.T) {
 	params := inout.StopOrderHistoryIn{Ccy: BTC, Count: 20}
-	hist, err := client.GetStopOrderHistory(&params)
+	var hist inout.StopOrderHistoryOut
+	err := client.GetStopOrderHistory(&params, &hist)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, h := range hist {
+	for _, h := range hist.Entries {
 		t.Logf("%+v\n", h)
 	}
 }
