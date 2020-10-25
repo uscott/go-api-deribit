@@ -77,6 +77,12 @@ func (c *Client) GetOpenOrdersByInstrument(
 	return
 }
 
+func (c *Client) GetStopOrderHistory(
+	params *inout.StopOrderHistoryIn) (result []inout.StopOrder, err error) {
+	err = c.Call("private/get_stop_order_history", params, &result)
+	return
+}
+
 func (c *Client) GetUserTradesByCurrency(
 	params *inout.TradesByCcyIn, result *inout.UserTradesOut) error {
 

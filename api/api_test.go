@@ -41,6 +41,17 @@ func TestTime(t *testing.T) {
 	fmt.Printf("%v\n", time.Now().UTC().Format(time.RFC3339))
 }
 
+func TestGetStopHistory(t *testing.T) {
+	params := inout.StopOrderHistoryIn{Ccy: BTC, Count: 20}
+	hist, err := client.GetStopOrderHistory(&params)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, h := range hist {
+		t.Logf("%+v\n", h)
+	}
+}
+
 func TestClientSubscribe(t *testing.T) {
 	c := client
 

@@ -79,3 +79,27 @@ type Order struct {
 	Triggered     bool    `json:"triggered,omitempty"`
 	USD           float64 `json:"usd,omitempty"`
 }
+
+// StopOrderHistoryIn is the input parameter for GetStopOrderHistory
+type StopOrderHistoryIn struct {
+	Ccy          string `json:"currency"`
+	Instrument   string `json:"instrument_name,omitempty"`
+	Count        int    `json:"count,omitempty"`
+	Continuation string `json:"continuation,omitempty"`
+}
+
+// StopOrder contains info for a submitted stop order
+type StopOrder struct {
+	Trigger    string  `json:"trigger"`
+	TmStmp     int64   `json:"timestamp"`
+	StopPrice  float64 `json:"stop_price"`
+	StopID     string  `json:"stop_id"`
+	OrderState string  `json:"order_state"`
+	Request    string  `json:"request"`
+	Prc        float64 `json:"price"`
+	OrderID    string  `json:"order_id"`
+	Offset     int     `json:"offset"`
+	Instrument string  `json:"instrument_name"`
+	Amt        float64 `json:"amount"`
+	Drctn      string  `json:"direction"`
+}
