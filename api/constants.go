@@ -28,11 +28,12 @@ const (
 
 // OrderState order state, `"open"`, `"filled"`, `"rejected"`, `"cancelled"`, `"untriggered"`
 const (
-	OrdrStateOpen       = "open"
-	OrdrStateFilled     = "filled"
-	OrdrStateRejected   = "rejected"
-	OrdrStateCancelled  = "cancelled"
-	OrdrStateUntriggerd = "untriggered"
+	OrdrStateOpen        = "open"
+	OrdrStateFilled      = "filled"
+	OrdrStateRejected    = "rejected"
+	OrdrStateCancelled   = "cancelled"
+	OrdrStateTriggered   = "triggered"
+	OrdrStateUntriggered = "untriggered"
 )
 
 // OrderType order type, `"limit"`, `"market"`, `"stop_limit"`, `"stop_market"`
