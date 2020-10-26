@@ -32,11 +32,11 @@ func TestGetAcct(t *testing.T) {
 }
 
 func TestTime(t *testing.T) {
-	tm, err := client.ExchangeTime()
+	extm, err := client.ExchangeTime()
 	if err != nil {
 		t.Failed()
 	}
-	fmt.Printf("%v\n", tm.Format(time.RFC3339))
+	fmt.Printf("%v\n", extm.Format(time.RFC3339))
 	fmt.Printf("%v\n", time.Now().Format(time.RFC3339))
 	fmt.Printf("%v\n", time.Now().UTC().Format(time.RFC3339))
 }
