@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/uscott/go-api-deribit/inout"
+	"github.com/uscott/go-tools/tm"
 )
 
 var (
@@ -63,6 +64,26 @@ func TestGetStopHistory(t *testing.T) {
 	}
 }
 
+func TestGetTrades(t *testing.T) {
+	end := tm.UTC()
+	start := end.Add(-7 * 24 * time.Hour)
+	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
+	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	out := inout.UserTradesOut{}
+	params := inout.TradesByInstrmtAndTmIn{
+		Instrument:  "BTC-PERPETUAL",
+		StartTmStmp: startStamp,
+		EndTmStmp:   endStamp,
+		Count:       0,
+		IncludeOld:  true,
+	}
+	err := client.GetUserTradesByInstrumentAndTime(&params, &out)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	t.Logf("Num trades: %d\n", len(out.Trades))
+	t.Logf("Has more:   %v\n", out.HasMore)
+}
 func TestClientSubscribe(t *testing.T) {
 	c := client
 
