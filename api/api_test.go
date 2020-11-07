@@ -74,7 +74,7 @@ func TestGetTrades(t *testing.T) {
 		Instrument:  "BTC-PERPETUAL",
 		StartTmStmp: startStamp,
 		EndTmStmp:   endStamp,
-		Count:       0,
+		Count:       10,
 		IncludeOld:  true,
 	}
 	err := client.GetUserTradesByInstrumentAndTime(&params, &out)
@@ -83,6 +83,28 @@ func TestGetTrades(t *testing.T) {
 	}
 	t.Logf("Num trades: %d\n", len(out.Trades))
 	t.Logf("Has more:   %v\n", out.HasMore)
+	if !out.HasMore || len(out.Trades) == 0 {
+		return
+	}
+	trades0 := make([]inout.UserTrade, len(out.Trades))
+	copy(trades0, out.Trades)
+	t0 := trades0[0]
+	endStamp = t0.TmStmp
+	params.EndTmStmp = endStamp
+	err = client.GetUserTradesByInstrumentAndTime(&params, &out)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	t.Logf("Num trades: %d\n", len(out.Trades))
+	t.Logf("Has more:   %v\n", out.HasMore)
+	if len(out.Trades) == 0 {
+		return
+	}
+	trades1 := make([]inout.UserTrade, len(out.Trades))
+	copy(trades1, out.Trades)
+	t1 := trades1[len(trades1)-1]
+	t.Logf("t0: %+v\n", t0)
+	t.Logf("t1: %+v\n", t1)
 }
 func TestClientSubscribe(t *testing.T) {
 	c := client
