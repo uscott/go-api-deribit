@@ -165,6 +165,9 @@ func (c *Client) GetUserTradesByInstrumentAndTimeExt(
 		copy(buf, out.Trades)
 		trades = append(trades, buf...)
 		params.EndTmStmp = buf[len(buf)-1].TmStmp - 1
+		if params.StartTmStmp >= params.EndTmStmp {
+			return
+		}
 		if err = c.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
 			return
 		}
