@@ -78,8 +78,9 @@ func TestGetTrades(t *testing.T) {
 		Instrument:  "BTC-25DEC20",
 		StartTmStmp: startStamp,
 		EndTmStmp:   endStamp,
-		Count:       100,
+		Count:       10,
 		IncludeOld:  true,
+		Sorting:     "desc",
 	}
 	err := client.GetUserTradesByInstrumentAndTime(&params, &out)
 	if err != nil {
@@ -90,39 +91,58 @@ func TestGetTrades(t *testing.T) {
 	if !out.HasMore || len(out.Trades) == 0 {
 		return
 	}
-	trades0 := make([]inout.UserTrade, len(out.Trades))
-	copy(trades0, out.Trades)
-	for _, x := range trades0 {
+	trades := make([]inout.UserTrade, len(out.Trades))
+	copy(trades, out.Trades)
+	for _, x := range trades {
 		stamp := client.ConvertExchStmp(x.TmStmp)
 		t.Logf("Trade time: %v\n", tm.Format0(stamp))
 	}
-	t0 := trades0[0]
-	endStamp = t0.TmStmp
-	end = client.ConvertExchStmp(endStamp)
-	t.Logf("Start: %v\n", tm.Format0(start))
-	t.Logf("End:   %v\n", tm.Format0(end))
-	t.Logf("Start stamp: %v\n", startStamp)
-	t.Logf("End stamp:   %v\n", endStamp)
-	params.EndTmStmp = endStamp
-	err = client.GetUserTradesByInstrumentAndTime(&params, &out)
-	if err != nil {
-		t.Fatal(err.Error())
+	for out.HasMore {
+		params.StartTmStmp = trades[0].TmStmp + 1
+		if params.StartTmStmp >= params.EndTmStmp {
+			break
+		}
+		if err = client.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+			return
+		}
+		buf := make([]inout.UserTrade, len(out.Trades))
+		if len(out.Trades) > 0 {
+			copy(buf, out.Trades)
+			trades = append(buf, trades...)
+			for _, x := range buf {
+				stamp := client.ConvertExchStmp(x.TmStmp)
+				t.Logf("Trade time: %v\n", tm.Format0(stamp))
+			}
+		}
 	}
-	t.Logf("Num trades: %d\n", len(out.Trades))
-	t.Logf("Has more:   %v\n", out.HasMore)
-	if len(out.Trades) == 0 {
+	params.StartTmStmp = startStamp
+	params.EndTmStmp = trades[len(trades)-1].TmStmp - 1
+	if params.StartTmStmp >= params.EndTmStmp {
 		return
 	}
-	trades1 := make([]inout.UserTrade, len(out.Trades))
-	copy(trades1, out.Trades)
-	for _, x := range trades1 {
+	if err = client.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+		return
+	}
+	for len(out.Trades) > 0 {
+		buf := make([]inout.UserTrade, len(out.Trades))
+		copy(buf, out.Trades)
+		for _, x := range buf {
+			stamp := client.ConvertExchStmp(x.TmStmp)
+			t.Logf("Trade time: %v\n", tm.Format0(stamp))
+		}
+		trades = append(trades, buf...)
+		params.EndTmStmp = buf[len(buf)-1].TmStmp - 1
+		if err = client.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+			return
+		}
+	}
+	t.Log("All trade time stamps")
+	for _, x := range trades {
 		stamp := client.ConvertExchStmp(x.TmStmp)
 		t.Logf("Trade time: %v\n", tm.Format0(stamp))
 	}
-	t1 := trades1[len(trades1)-1]
-	t.Logf("t0: %+v\n", t0)
-	t.Logf("t1: %+v\n", t1)
 }
+
 func TestClientSubscribe(t *testing.T) {
 	c := client
 

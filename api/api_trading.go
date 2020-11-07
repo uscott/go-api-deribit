@@ -113,30 +113,61 @@ func (c *Client) GetUserTradesByInstrumentAndTime(
 }
 
 func (c *Client) GetUserTradesByInstrumentAndTimeExtended(
-	instrument string, start, end time.Time) ([]inout.UserTrade, error) {
+	instrument string, start, end time.Time) (trades []inout.UserTrade, err error) {
 
 	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
 	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	const cnt = 1000
+	params := inout.TradesByInstrmtAndTmIn{
+		Instrument:  instrument,
+		StartTmStmp: startStamp,
+		EndTmStmp:   endStamp,
+		Count:       cnt,
+		IncludeOld:  true,
+		Sorting:     "desc",
+	}
+	if params.StartTmStmp >= params.EndTmStmp {
+		return
+	}
 	out := inout.UserTradesOut{}
-	var err error
-	const step = 250
-	for cnt := step; cnt <= 1000; cnt += step {
-		err = c.GetUserTradesByInstrumentAndTime(
-			&inout.TradesByInstrmtAndTmIn{
-				Instrument:  instrument,
-				StartTmStmp: startStamp,
-				EndTmStmp:   endStamp,
-				Count:       cnt,
-				IncludeOld:  true,
-			},
-			&out)
-		if err != nil {
-			return []inout.UserTrade{}, err
-		}
-		if !out.HasMore {
+	if err = c.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+		return
+	}
+	trades = make([]inout.UserTrade, len(out.Trades))
+	if len(out.Trades) == 0 {
+		return
+	}
+	copy(trades, out.Trades)
+	for out.HasMore {
+		params.StartTmStmp = trades[0].TmStmp + 1
+		if params.StartTmStmp >= params.EndTmStmp {
 			break
 		}
-		time.Sleep(time.Second)
+		if err = c.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+			return
+		}
+		buf := make([]inout.UserTrade, len(out.Trades))
+		if len(out.Trades) > 0 {
+			copy(buf, out.Trades)
+			trades = append(buf, trades...)
+		}
 	}
-	return out.Trades, nil
+	params.StartTmStmp = startStamp
+	params.EndTmStmp = trades[len(trades)-1].TmStmp - 1
+	if params.StartTmStmp >= params.EndTmStmp {
+		return
+	}
+	if err = c.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+		return
+	}
+	for len(out.Trades) > 0 {
+		buf := make([]inout.UserTrade, len(out.Trades))
+		copy(buf, out.Trades)
+		trades = append(trades, buf...)
+		params.EndTmStmp = buf[len(buf)-1].TmStmp - 1
+		if err = c.GetUserTradesByInstrumentAndTime(&params, &out); err != nil {
+			return
+		}
+	}
+	return
 }
