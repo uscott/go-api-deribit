@@ -1,9 +1,13 @@
 package api
 
 import (
+	"time"
+
 	"github.com/uscott/go-api-deribit/inout"
 	"github.com/uscott/go-tools/errs"
 )
+
+var timeZero = time.Date(1970, 1, 1, 0, 0, 0, 0, time.FixedZone("utc", 0))
 
 // Buy posts a buy order to the exchange
 func (c *Client) Buy(params *inout.OrderIn, result *inout.OrderOut) error {
@@ -106,4 +110,33 @@ func (c *Client) GetUserTradesByInstrumentAndTime(
 	params *inout.TradesByInstrmtAndTmIn, result *inout.UserTradesOut) error {
 
 	return c.Call("private/get_user_trades_by_instrument_and_time", params, result)
+}
+
+func (c *Client) GetUserTradesByInstrumentAndTimeExtended(
+	instrument string, start, end time.Time) ([]inout.UserTrade, error) {
+
+	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
+	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	out := inout.UserTradesOut{}
+	var err error
+	const step = 250
+	for cnt := step; cnt <= 1000; cnt += step {
+		err = c.GetUserTradesByInstrumentAndTime(
+			&inout.TradesByInstrmtAndTmIn{
+				Instrument:  instrument,
+				StartTmStmp: startStamp,
+				EndTmStmp:   endStamp,
+				Count:       cnt,
+				IncludeOld:  true,
+			},
+			&out)
+		if err != nil {
+			return []inout.UserTrade{}, err
+		}
+		if !out.HasMore {
+			break
+		}
+		time.Sleep(time.Second)
+	}
+	return out.Trades, nil
 }
