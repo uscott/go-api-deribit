@@ -67,14 +67,18 @@ func TestGetStopHistory(t *testing.T) {
 func TestGetTrades(t *testing.T) {
 	end := tm.UTC()
 	start := end.Add(-7 * 24 * time.Hour)
+	t.Logf("Start: %v\n", tm.Format0(start))
+	t.Logf("End:   %v\n", tm.Format0(end))
 	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
 	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	t.Logf("Start stamp: %v\n", startStamp)
+	t.Logf("End stamp:   %v\n", endStamp)
 	out := inout.UserTradesOut{}
 	params := inout.TradesByInstrmtAndTmIn{
-		Instrument:  "BTC-PERPETUAL",
+		Instrument:  "BTC-25DEC20",
 		StartTmStmp: startStamp,
 		EndTmStmp:   endStamp,
-		Count:       10,
+		Count:       100,
 		IncludeOld:  true,
 	}
 	err := client.GetUserTradesByInstrumentAndTime(&params, &out)
@@ -90,6 +94,11 @@ func TestGetTrades(t *testing.T) {
 	copy(trades0, out.Trades)
 	t0 := trades0[0]
 	endStamp = t0.TmStmp
+	end = client.ConvertExchStmp(endStamp)
+	t.Logf("Start: %v\n", tm.Format0(start))
+	t.Logf("End:   %v\n", tm.Format0(end))
+	t.Logf("Start stamp: %v\n", startStamp)
+	t.Logf("End stamp:   %v\n", endStamp)
 	params.EndTmStmp = endStamp
 	err = client.GetUserTradesByInstrumentAndTime(&params, &out)
 	if err != nil {
