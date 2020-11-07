@@ -92,6 +92,10 @@ func TestGetTrades(t *testing.T) {
 	}
 	trades0 := make([]inout.UserTrade, len(out.Trades))
 	copy(trades0, out.Trades)
+	for _, x := range trades0 {
+		stamp := client.ConvertExchStmp(x.TmStmp)
+		t.Logf("Trade time: %v\n", tm.Format0(stamp))
+	}
 	t0 := trades0[0]
 	endStamp = t0.TmStmp
 	end = client.ConvertExchStmp(endStamp)
@@ -111,6 +115,10 @@ func TestGetTrades(t *testing.T) {
 	}
 	trades1 := make([]inout.UserTrade, len(out.Trades))
 	copy(trades1, out.Trades)
+	for _, x := range trades1 {
+		stamp := client.ConvertExchStmp(x.TmStmp)
+		t.Logf("Trade time: %v\n", tm.Format0(stamp))
+	}
 	t1 := trades1[len(trades1)-1]
 	t.Logf("t0: %+v\n", t0)
 	t.Logf("t1: %+v\n", t1)
