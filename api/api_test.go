@@ -137,10 +137,17 @@ func TestGetTrades(t *testing.T) {
 		}
 	}
 	t.Log("All trade time stamps")
-	for _, x := range trades {
+	for i, x := range trades {
 		stamp := client.ConvertExchStmp(x.TmStmp)
 		t.Logf("Trade time: %v\n", tm.Format0(stamp))
+		if i >= 1 {
+			t0, t1 := trades[i-1].TmStmp, trades[i].TmStmp
+			if t0 >= t1 {
+				t.Fatalf("Trade times not increasing:\n%+v\n%+v\n", trades[i-1], trades[i])
+			}
+		}
 	}
+	t.Logf("Num trades: %d\n", len(trades))
 }
 
 func TestClientSubscribe(t *testing.T) {
