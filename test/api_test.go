@@ -5,15 +5,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/uscott/go-api-deribit/api"
 	"github.com/uscott/go-api-deribit/inout"
 	"github.com/uscott/go-tools/tm"
 )
 
 var (
-	client *Client
+	client *api.Client
 )
 
-func newClient() (*Client, error) {
+func newClient() (*api.Client, error) {
 	return New(DfltCnfg())
 }
 
@@ -26,7 +27,7 @@ func TestClientCreate(t *testing.T) {
 }
 
 func TestGetAcct(t *testing.T) {
-	if err := client.GetAccountSummary(BTC, true, &client.Acct); err != nil {
+	if err := client.GetAccountSummary(api.BTC, true, &client.Acct); err != nil {
 		t.Fatal(err.Error())
 	}
 	t.Logf("%+v\n", client.Acct)
@@ -43,7 +44,7 @@ func TestTime(t *testing.T) {
 }
 
 func TestGetStopHistory(t *testing.T) {
-	params := inout.StopOrderHistoryIn{Ccy: BTC, Count: 20}
+	params := inout.StopOrderHistoryIn{Ccy: api.BTC, Count: 20}
 	var hist inout.StopOrderHistoryOut
 	err := client.GetStopOrderHistory(&params, &hist)
 	if err != nil {
@@ -66,11 +67,11 @@ func TestGetStopHistory(t *testing.T) {
 
 func TestGetTrades(t *testing.T) {
 	end := tm.UTC()
-	start := end.Add(-7 * 24 * time.Hour)
+	start := end.Add(-4 * 7 * 24 * time.Hour)
 	t.Logf("Start: %v\n", tm.Format0(start))
 	t.Logf("End:   %v\n", tm.Format0(end))
-	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
-	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	startStamp := int64(start.Sub(api.TimeZero) / time.Millisecond)
+	endStamp := int64(end.Sub(api.TimeZero) / time.Millisecond)
 	t.Logf("Start stamp: %v\n", startStamp)
 	t.Logf("End stamp:   %v\n", endStamp)
 	out := inout.UserTradesOut{}

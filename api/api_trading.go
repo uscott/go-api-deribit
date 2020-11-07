@@ -7,7 +7,7 @@ import (
 	"github.com/uscott/go-tools/errs"
 )
 
-var timeZero = time.Date(1970, 1, 1, 0, 0, 0, 0, time.FixedZone("utc", 0))
+var TimeZero = time.Date(1970, 1, 1, 0, 0, 0, 0, time.FixedZone("utc", 0))
 
 // Buy posts a buy order to the exchange
 func (c *Client) Buy(params *inout.OrderIn, result *inout.OrderOut) error {
@@ -112,11 +112,11 @@ func (c *Client) GetUserTradesByInstrumentAndTime(
 	return c.Call("private/get_user_trades_by_instrument_and_time", params, result)
 }
 
-func (c *Client) GetUserTradesByInstrumentAndTimeExtended(
+func (c *Client) GetUserTradesByInstrumentAndTimeExt(
 	instrument string, start, end time.Time) (trades []inout.UserTrade, err error) {
 
-	startStamp := int64(start.Sub(timeZero) / time.Millisecond)
-	endStamp := int64(end.Sub(timeZero) / time.Millisecond)
+	startStamp := int64(start.Sub(TimeZero) / time.Millisecond)
+	endStamp := int64(end.Sub(TimeZero) / time.Millisecond)
 	const cnt = 1000
 	params := inout.TradesByInstrmtAndTmIn{
 		Instrument:  instrument,
