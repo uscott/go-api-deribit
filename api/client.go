@@ -238,7 +238,7 @@ func (c *Client) CreateLogger() error {
 	} else {
 		logFile = os.Stdout
 	}
-	lflags := log.LstdFlags | log.LUTC | log.Lmsgprefix
+	lflags := log.LstdFlags | log.LUTC | log.Lmsgprefix | log.Lshortfile
 	c.Logger = log.New(logFile, "", lflags)
 	return nil
 }
