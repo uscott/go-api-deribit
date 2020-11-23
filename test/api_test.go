@@ -151,6 +151,13 @@ func TestGetTrades(t *testing.T) {
 	t.Logf("Num trades: %d\n", len(trades))
 }
 
+func TestHistVol(t *testing.T) {
+	vols, err := client.GetHistoricalVolatility(api.BTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Vols: %+v\n", vols)
+}
 func TestClientSubscribe(t *testing.T) {
 	c := client
 
