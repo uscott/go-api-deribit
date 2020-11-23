@@ -67,7 +67,7 @@ func TestGetStopHistory(t *testing.T) {
 
 func TestGetTrades(t *testing.T) {
 	end := tm.UTC()
-	start := end.Add(-31 * 24 * time.Hour)
+	start := end.Add(-1 * 24 * time.Hour)
 	t.Logf("Start: %v\n", tm.Format0(start))
 	t.Logf("End:   %v\n", tm.Format0(end))
 	startStamp := int64(start.Sub(api.TimeZero) / time.Millisecond)
