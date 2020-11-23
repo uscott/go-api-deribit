@@ -156,8 +156,13 @@ func TestHistVol(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("Vols: %+v\n", vols)
+	for _, x := range vols {
+		stamp := client.ConvertExchStmp(int64(x[0]))
+		v := x[1]
+		t.Logf("Time, Vol: %v, %.2f\n", tm.Format0(stamp), v)
+	}
 }
+
 func TestClientSubscribe(t *testing.T) {
 	c := client
 
