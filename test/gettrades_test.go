@@ -31,7 +31,7 @@ func TestGetTrades(t *testing.T) {
 		IncludeOld:  true,
 		Sorting:     "desc",
 	}
-	err := client.GetUserTradesByInstrumentAndTime(&params, &out)
+	err = client.GetUserTradesByInstrumentAndTime(&params, &out)
 	if err != nil {
 		t.Fatal(err)
 	}
