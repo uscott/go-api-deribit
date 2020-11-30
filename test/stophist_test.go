@@ -14,7 +14,7 @@ func TestGetStopHistory(t *testing.T) {
 	}
 	params := inout.StopOrderHistoryIn{Ccy: api.BTC, Count: 20}
 	var hist inout.StopOrderHistoryOut
-	err := client.GetStopOrderHistory(&params, &hist)
+	err = client.GetStopOrderHistory(&params, &hist)
 	if err != nil {
 		t.Fatal(err)
 	}
