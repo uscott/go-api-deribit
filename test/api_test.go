@@ -1,4 +1,4 @@
-package api
+package test
 
 import (
 	"fmt"
@@ -11,20 +11,8 @@ import (
 )
 
 var (
-	client *api.Client
+	client, _ = newClient()
 )
-
-func newClient() (*api.Client, error) {
-	return api.New(api.DfltCnfg())
-}
-
-func TestClientCreate(t *testing.T) {
-	var err error
-	client, err = newClient()
-	if err != nil {
-		t.Fatal(err.Error())
-	}
-}
 
 func TestGetAcct(t *testing.T) {
 	if err := client.GetAccountSummary(api.BTC, true, &client.Acct); err != nil {
