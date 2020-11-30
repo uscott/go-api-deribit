@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	client, _ = newClient()
+	client, _ = api.New(api.DfltCnfg())
 )
 
 func TestGetAcct(t *testing.T) {

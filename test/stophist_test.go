@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetStopHistory(t *testing.T) {
-	client, err := newClient()
+	client, err := api.New(api.DfltCnfg())
 	if err != nil {
 		t.Fatal(err)
 	}
