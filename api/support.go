@@ -67,11 +67,13 @@ type Quote struct {
 // Book contains orderbook bids, asks with
 // user orders pruned out
 type Book struct {
-	Time    time.Time `json:"time"`
-	BestBid Quote     `json:"best_bid"`
-	BestAsk Quote     `json:"best_ask"`
-	Bids    []Quote   `json:"bids"`
-	Asks    []Quote   `json:"asks"`
+	Contract   string    `json:"contract"`
+	Expiration time.Time `json:"expiration"`
+	Time       time.Time `json:"time"`
+	BestBid    Quote     `json:"best_bid"`
+	BestAsk    Quote     `json:"best_ask"`
+	Bids       []Quote   `json:"bids"`
+	Asks       []Quote   `json:"asks"`
 }
 
 // InitBook sets Bids and Asks fields
