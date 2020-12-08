@@ -59,9 +59,17 @@ func (c *Client) GetIndex(currency string) (float64, error) {
 // GetInstruments returns instruments/contracts traded on exchange
 // various related data
 func (c *Client) GetInstruments(
-	params *inout.InstrumentIn) (result []inout.InstrumentOut, err error) {
-	err = c.Call("public/get_instruments", params, &result)
-	return
+	currency, kind string, expired bool) (result []inout.InstrumentOut, err error) {
+
+	err = c.Call(
+		"public/get_instruments",
+		&inout.InstrumentIn{
+			Ccy:     currency,
+			Kind:    kind,
+			Expired: expired,
+		},
+		&result)
+	return result, err
 }
 
 func (c *Client) GetLastTradesByCurrency(

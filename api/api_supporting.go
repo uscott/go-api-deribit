@@ -140,6 +140,21 @@ func CpyBook(src *inout.BookOut, dst *Book) error {
 	return nil
 }
 
+func (c *Client) GetOneInstrument(
+	contract, currency, kind string) (inout.InstrumentOut, error) {
+
+	instruments, err := c.GetInstruments(currency, kind, false)
+	if err != nil {
+		return inout.InstrumentOut{}, err
+	}
+	for _, ins := range instruments {
+		if ins.Instrument == contract {
+			return ins, nil
+		}
+	}
+	return inout.InstrumentOut{}, fmt.Errorf("could not get instrument")
+}
+
 func NewBook(bk *inout.BookOut, expiration time.Time) (*Book, error) {
 	if bk == nil {
 		return nil, errs.ErrNilPtr
@@ -147,6 +162,21 @@ func NewBook(bk *inout.BookOut, expiration time.Time) (*Book, error) {
 	out := Book{Expiration: expiration}
 	err := CpyBook(bk, &out)
 	return &out, err
+}
+
+func (c *Client) NewBook(contract, currency, kind string, depth int) (*Book, error) {
+	con, ccy := contract, currency
+	ins, err := c.GetOneInstrument(con, ccy, "future")
+	if err != nil {
+		return nil, err
+	}
+	var bkraw *inout.BookOut
+	err = c.GetBook(con, depth, bkraw)
+	if err != nil {
+		return nil, err
+	}
+	expi := ConvertExchStmp(ins.ExprtnTmStmp)
+	return NewBook(bkraw, expi)
 }
 
 // NewFuturesData returns an allocated pointer to a FuturesData struct
@@ -159,6 +189,14 @@ func NewFuturesData(ins *inout.InstrumentOut) (*FuturesData, error) {
 	f.Expiration = ConvertExchStmp(ins.ExprtnTmStmp)
 	f.IsSwap = ins.StlmntPrd == "perpetual"
 	return &f, nil
+}
+
+func (c *Client) NewFuturesData(contract, currency string) (*FuturesData, error) {
+	ins, err := c.GetOneInstrument(contract, currency, "future")
+	if err != nil {
+		return nil, err
+	}
+	return NewFuturesData(&ins)
 }
 
 func PruneOrdersFromBook(bk *Book, orders []inout.Order) error {

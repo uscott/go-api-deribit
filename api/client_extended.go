@@ -205,8 +205,7 @@ func (c *ClientExtended) UpdtBkSummary(contract string) error {
 // UpdtFutures updates futures info map
 func (c *ClientExtended) UpdtFutures() (err error) {
 	ccy := c.Config.Currency
-	c.Instruments, err = c.GetInstruments(
-		&inout.InstrumentIn{Ccy: ccy, Kind: "future", Expired: false})
+	c.Instruments, err = c.GetInstruments(ccy, "future", false)
 	if err != nil {
 		return err
 	}
