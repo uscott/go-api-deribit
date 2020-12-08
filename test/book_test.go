@@ -14,7 +14,7 @@ func TestBookCreate(t *testing.T) {
 	c := api.BTCSWAP
 	bk, err := client.NewBook(c, api.BTC, "future", 10)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err.Error())
 	}
 	t.Logf("Book: %+v\n", *bk)
 }

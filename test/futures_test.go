@@ -13,7 +13,7 @@ var (
 func TestFuturesCreate(t *testing.T) {
 	f, err := client.NewFuturesData(api.BTCSWAP, api.BTC)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(err.Error())
 	}
 	t.Logf("Futures Data: %+v", *f)
 }

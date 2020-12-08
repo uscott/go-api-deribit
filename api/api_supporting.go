@@ -170,13 +170,13 @@ func (c *Client) NewBook(contract, currency, kind string, depth int) (*Book, err
 	if err != nil {
 		return nil, err
 	}
-	var bkraw *inout.BookOut
-	err = c.GetBook(con, depth, bkraw)
+	var bkraw inout.BookOut{}
+	err = c.GetBook(con, depth, &bkraw)
 	if err != nil {
 		return nil, err
 	}
 	expi := ConvertExchStmp(ins.ExprtnTmStmp)
-	return NewBook(bkraw, expi)
+	return NewBook(&bkraw, expi)
 }
 
 // NewFuturesData returns an allocated pointer to a FuturesData struct
