@@ -186,8 +186,12 @@ func NewFuturesData(ins *inout.InstrumentOut) (*FuturesData, error) {
 		return nil, errs.ErrNilPtr
 	}
 	f := FuturesData{InstrumentOut: *ins, Expiration: time.Time{}, IsSwap: false}
-	f.Expiration = ConvertExchStmp(ins.ExprtnTmStmp)
 	f.IsSwap = ins.StlmntPrd == "perpetual"
+	if f.IsSwap {
+		f.Expiration = time.Date(9999, 12, 31, 0, 0, 0, 0, time.FixedZone("utc", 0))
+	} else {
+		f.Expiration = ConvertExchStmp(ins.ExprtnTmStmp)
+	}
 	return &f, nil
 }
 
