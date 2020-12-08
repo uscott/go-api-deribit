@@ -59,7 +59,7 @@ type Order struct {
 	AvgPrc        float64 `json:"average_price"`
 	Commission    float64 `json:"commission"`
 	CreatnTmStmp  int64   `json:"creation_timestamp"`
-	Drctn         string  `json:"direction"`
+	Direction     string  `json:"direction"`
 	FilledAmt     float64 `json:"filled_amount"`
 	Implv         float64 `json:"implv,omitempty"`
 	Instrument    string  `json:"instrument_name"`

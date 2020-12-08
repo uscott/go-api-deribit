@@ -97,6 +97,58 @@ func Inverse(x float64) float64 {
 	}
 }
 
+func CpyBook(src *inout.BookOut, dst *Book) error {
+	if src == nil {
+		return fmt.Errorf("source pointer is nil")
+	}
+	if dst == nil {
+		return fmt.Errorf("destination pointer is nil")
+	}
+	dst.Contract = src.Instrument
+	dst.IndxPrc = src.IndxPrc
+	dst.Last = src.Last
+	dst.OpenInterest = src.OpnIntrst
+	dst.Stats = src.Stats
+	dst.TimeStamp = ConvertExchStmp(src.TmStmp)
+	nbids, nasks := len(src.Bids), len(src.Asks)
+	if cap(dst.Bids) < nbids {
+		dst.Bids = make([]Quote, nbids)
+	}
+	dst.Bids = dst.Bids[:nbids]
+	if cap(dst.Asks) < nasks {
+		dst.Asks = make([]Quote, nasks)
+	}
+	dst.Asks = dst.Asks[:nasks]
+	q := dst.Bids
+	for i, bid := range src.Bids {
+		q[i].Prc, q[i].Amt = bid[0], bid[1]
+	}
+	q = dst.Asks
+	for i, ask := range src.Asks {
+		q[i].Prc, q[i].Amt = ask[0], ask[1]
+	}
+	if nbids > 0 {
+		dst.BestBid = dst.Bids[0]
+	} else {
+		dst.BestBid = Quote{Prc: math.NaN(), Amt: math.NaN()}
+	}
+	if nasks > 0 {
+		dst.BestAsk = dst.Asks[0]
+	} else {
+		dst.BestAsk = Quote{Prc: math.NaN(), Amt: math.NaN()}
+	}
+	return nil
+}
+
+func NewBook(bk *inout.BookOut, expiration time.Time) (*Book, error) {
+	if bk == nil {
+		return nil, errs.ErrNilPtr
+	}
+	out := Book{Expiration: expiration}
+	err := CpyBook(bk, &out)
+	return &out, err
+}
+
 // NewFuturesData returns an allocated pointer to a FuturesData struct
 // based on the data in the InstrumentOut argument
 func NewFuturesData(ins *inout.InstrumentOut) (*FuturesData, error) {
@@ -109,13 +161,63 @@ func NewFuturesData(ins *inout.InstrumentOut) (*FuturesData, error) {
 	return &f, nil
 }
 
-// PruneUsrOrdrsFromQuts is used to remove user orders from the order book
-func PruneUsrOrdrsFromQuts(quotes []float64, orders *[]inout.Order, maxdiff float64) {
+func PruneOrdersFromBook(bk *Book, orders []inout.Order) error {
+	if bk == nil {
+		return errs.ErrNilPtr
+	}
+	bidOrders := make([]inout.Order, 0, len(orders))
+	askOrders := make([]inout.Order, 0, len(orders))
+	for _, o := range orders {
+		switch o.Direction {
+		case DirBuy:
+			if o.Instrument == bk.Contract {
+				bidOrders = append(bidOrders, o)
+			}
+		case DirSell:
+			if o.Instrument == bk.Contract {
+				askOrders = append(askOrders, o)
+			}
+		default:
+			return fmt.Errorf("unknown order direction: %+v", o)
+		}
+	}
+	for i := range bk.Bids {
+		err := PruneOrdersFromQuote(&bk.Bids[i], &bidOrders)
+		if err != nil {
+			return err
+		}
+	}
+	for i := range bk.Asks {
+		err := PruneOrdersFromQuote(&bk.Asks[i], &askOrders)
+		if err != nil {
+			return err
+		}
+	}
+	RmZeroQuotes(&bk.Bids)
+	RmZeroQuotes(&bk.Asks)
+	if len(bk.Bids) > 0 {
+		bk.BestBid = bk.Bids[0]
+	} else {
+		bk.BestBid = Quote{Prc: math.NaN(), Amt: math.NaN()}
+	}
+	if len(bk.Asks) > 0 {
+		bk.BestAsk = bk.Asks[0]
+	} else {
+		bk.BestAsk = Quote{Prc: math.NaN(), Amt: math.NaN()}
+	}
+	return nil
+}
+
+// PruneOrdersFromQuote0 is used to remove user orders from the order book
+func PruneOrdersFromQuote0(quote *Quote, orders *[]inout.Order, maxdiff float64) error {
+	if quote == nil {
+		return errs.ErrNilPtr
+	}
 	if len(*orders) == 0 {
-		return
+		return nil
 	}
 	rmvIndcs := make([]int, 0, len(*orders))
-	prc, amt, mchAmt := quotes[0], quotes[1], 0.0
+	prc, amt, mchAmt := quote.Prc, quote.Amt, 0.0
 	for i, o := range *orders {
 		if math.Abs(prc-float64(o.Prc)) < maxdiff {
 			mchAmt += o.Amt
@@ -135,5 +237,87 @@ func PruneUsrOrdrsFromQuts(quotes []float64, orders *[]inout.Order, maxdiff floa
 		}
 		nRmvd++
 	}
-	quotes[1] = amt - mchAmt
+	quote.Amt = amt - mchAmt
+	return nil
+}
+
+func PruneOrdersFromQuote(quote *Quote, orders *[]inout.Order) error {
+	if quote == nil {
+		return errs.ErrNilPtr
+	}
+	if len(*orders) == 0 {
+		return nil
+	}
+	rmv := make([]int, 0, len(*orders))
+	prc, amt, mchAmt := quote.Prc, quote.Amt, 0.0
+	for i, o := range *orders {
+		if math.Abs(prc-float64(o.Prc)) < SMALL {
+			mchAmt += o.Amt
+			rmv = append(rmv, i)
+		}
+	}
+	nrm := 0
+	for _, i := range rmv {
+		rmOrder(orders, i-nrm)
+		nrm++
+	}
+	quote.Amt = amt - mchAmt
+	return nil
+}
+
+func rmOrder(orders *[]inout.Order, i int) {
+	if orders == nil {
+		return
+	}
+	n := len(*orders)
+	if i < 0 || n <= i || n == 0 {
+		return
+	}
+	switch i {
+	case 0:
+		*orders = (*orders)[1:]
+	case n - 1:
+		*orders = (*orders)[:n-1]
+	default:
+		*orders = append((*orders)[:i], (*orders)[i+1:]...)
+	}
+}
+
+func rmQuote(quotes *[]Quote, i int) {
+	if quotes == nil {
+		return
+	}
+	n := len(*quotes)
+	if i < 0 || n <= i || n == 0 {
+		return
+	}
+	switch i {
+	case 0:
+		*quotes = (*quotes)[1:]
+	case n - 1:
+		*quotes = (*quotes)[:n-1]
+	default:
+		*quotes = append((*quotes)[:i], (*quotes)[i+1:]...)
+	}
+}
+
+func RmZeroQuotes(quotes *[]Quote) {
+	if quotes == nil {
+		return
+	}
+	n := len(*quotes)
+	if n == 0 {
+		return
+	}
+	rmv := make([]int, 0, n)
+	for i, q := range *quotes {
+		if q.Amt < math.SmallestNonzeroFloat64 {
+			rmv = append(rmv, i)
+		}
+	}
+	nrm := 0
+	for _, i := range rmv {
+		rmQuote(quotes, i-nrm)
+		nrm++
+	}
 }

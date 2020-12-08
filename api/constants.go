@@ -24,6 +24,8 @@ const (
 const (
 	DrctnBuy  = "buy"
 	DrctnSell = "sell"
+	DirBuy    = DrctnBuy
+	DirSell   = DrctnSell
 )
 
 // OrderState order state, `"open"`, `"filled"`, `"rejected"`, `"cancelled"`, `"untriggered"`

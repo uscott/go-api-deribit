@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"sort"
 	"time"
 
@@ -238,62 +237,26 @@ func (c *ClientExtended) UpdtOpnOrdrs(contract string) error {
 
 // UpdtOrdrBkAdj updates the order book and prunes user orders
 func (c *ClientExtended) UpdtOrdrBkAdj(contract string) error {
-	k := contract
-	maxDiff := c.TckSz[k] / 4.0
-	bids := make([][]float64, len(c.ObRaw[k].Bids))
-	asks := make([][]float64, len(c.ObRaw[k].Asks))
-	for i, qut := range c.ObRaw[k].Bids {
-		bids[i] = []float64{qut[0], qut[1]}
+	con := contract
+	raw, ok := c.ObRaw[con]
+	if !ok {
+		return fmt.Errorf("no raw book map value for contract: %s", con)
 	}
-	for i, qut := range c.ObRaw[k].Asks {
-		asks[i] = []float64{qut[0], qut[1]}
+	adj, ok := c.ObAdj[con]
+	if !ok {
+		return fmt.Errorf("no adj book map value for contract: %s", con)
 	}
-	bidOrdrs := make([]inout.Order, 0, len(c.OpnOrdrs[k]))
-	askOrdrs := make([]inout.Order, 0, len(c.OpnOrdrs[k]))
-	for _, o := range c.OpnOrdrs[k] {
-		if o.Drctn == DrctnBuy {
-			bidOrdrs = append(bidOrdrs, o)
-		} else if o.Drctn == DrctnSell {
-			askOrdrs = append(askOrdrs, o)
-		} else {
-			return fmt.Errorf("order direction is neither buy nor sell: %v", o)
-		}
+	if err := CpyBook(&raw, &adj); err != nil {
+		return err
 	}
-	for _, qut := range bids {
-		PruneUsrOrdrsFromQuts(qut, &bidOrdrs, maxDiff)
+	orders, ok := c.OpnOrdrs[con]
+	if !ok {
+		return fmt.Errorf("no open orders map value for contract: %s", con)
 	}
-	var bestBidAmt, bestBid float64
-	bidsAdj := make([]Quote, 0, len(bids))
-	for _, qut := range bids {
-		prc, amt := qut[0], qut[1]
-		if amt > 0 {
-			if prc > bestBid {
-				bestBid, bestBidAmt = prc, amt
-			}
-			bidsAdj = append(bidsAdj, Quote{Amt: amt, Prc: prc})
-		}
+	if err := PruneOrdersFromBook(&adj, orders); err != nil {
+		return err
 	}
-	for _, qut := range asks {
-		PruneUsrOrdrsFromQuts(qut, &askOrdrs, maxDiff)
-	}
-	var bestAskAmt float64
-	bestAsk, asksAdj := math.MaxFloat64, make([]Quote, 0, len(asks))
-	for _, qut := range asks {
-		prc, amt := qut[0], qut[1]
-		if amt > 0 {
-			if prc < bestAsk {
-				bestAsk, bestAskAmt = prc, amt
-			}
-			asksAdj = append(asksAdj, Quote{Amt: amt, Prc: prc})
-		}
-	}
-	c.ObAdj[k] = Book{
-		TimeStamp: ConvertExchStmp(c.ObRaw[k].TmStmp),
-		BestBid:   Quote{Prc: bestBid, Amt: bestBidAmt},
-		BestAsk:   Quote{Prc: bestAsk, Amt: bestAskAmt},
-		Bids:      bidsAdj,
-		Asks:      asksAdj,
-	}
+	c.ObAdj[con] = adj
 	return nil
 }
 
