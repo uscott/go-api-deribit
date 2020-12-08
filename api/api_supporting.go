@@ -3,8 +3,10 @@ package api
 import (
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/uscott/go-api-deribit/inout"
+	"github.com/uscott/go-tools/errs"
 )
 
 var contractMap = map[string]string{
@@ -20,6 +22,28 @@ var contractMap = map[string]string{
 	"OCT": "V",
 	"NOV": "X",
 	"DEC": "Z",
+}
+
+const exchTmStmpUnit = time.Millisecond
+
+// ConvertExchStmp converts an exchange time stamp
+// to a client-side time.Time
+func ConvertExchStmp(ts int64) time.Time {
+	ts *= int64(exchTmStmpUnit) / int64(time.Nanosecond)
+	return time.Unix(ts/int64(time.Second), ts%int64(time.Second)).UTC()
+}
+
+// ExchangeTime returns the exchange time as
+// a client-side time.Time
+func (c *Client) ExchangeTime() (time.Time, error) {
+	var (
+		ms  int64
+		err error
+	)
+	if ms, err = c.GetTime(); err != nil {
+		return time.Time{}, err
+	}
+	return ConvertExchStmp(ms), nil
 }
 
 // GetTime retrieves the exchange server time
@@ -71,6 +95,18 @@ func Inverse(x float64) float64 {
 	default:
 		return -BIG
 	}
+}
+
+// NewFuturesData returns an allocated pointer to a FuturesData struct
+// based on the data in the InstrumentOut argument
+func NewFuturesData(ins *inout.InstrumentOut) (*FuturesData, error) {
+	if ins == nil {
+		return nil, errs.ErrNilPtr
+	}
+	f := FuturesData{InstrumentOut: *ins, Expiration: time.Time{}, IsSwap: false}
+	f.Expiration = ConvertExchStmp(ins.ExprtnTmStmp)
+	f.IsSwap = ins.StlmntPrd == "perpetual"
+	return &f, nil
 }
 
 // PruneUsrOrdrsFromQuts is used to remove user orders from the order book

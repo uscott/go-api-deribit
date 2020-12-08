@@ -213,16 +213,12 @@ func (c *ClientExtended) UpdtFutures() (err error) {
 	}
 	for _, i := range c.Instruments {
 		if i.Kind == "future" {
-			c.Futures[i.Instrument] = FuturesData{i, 0, false}
+			c.Futures[i.Instrument] = FuturesData{i, time.Time{}, false}
 		}
 	}
 	c.CreateSymbols()
-	t0, err := c.ExchangeTime()
-	if err != nil {
-		return err
-	}
 	for k, v := range c.Futures {
-		v.TimeToExpiry = c.ConvertExchStmp(v.ExprtnTmStmp).Sub(t0)
+		v.Expiration = ConvertExchStmp(v.ExprtnTmStmp)
 		v.IsSwap = v.StlmntPrd == "perpetual"
 		c.Futures[k] = v
 	}
@@ -274,7 +270,7 @@ func (c *ClientExtended) UpdtOrdrBkAdj(contract string) error {
 			if prc > bestBid {
 				bestBid, bestBidAmt = prc, amt
 			}
-			bidsAdj = append(bidsAdj, Quote{Amt: amt, Prc: prc, Drctn: DrctnBuy})
+			bidsAdj = append(bidsAdj, Quote{Amt: amt, Prc: prc})
 		}
 	}
 	for _, qut := range asks {
@@ -288,15 +284,15 @@ func (c *ClientExtended) UpdtOrdrBkAdj(contract string) error {
 			if prc < bestAsk {
 				bestAsk, bestAskAmt = prc, amt
 			}
-			asksAdj = append(asksAdj, Quote{Amt: amt, Prc: prc, Drctn: DrctnSell})
+			asksAdj = append(asksAdj, Quote{Amt: amt, Prc: prc})
 		}
 	}
 	c.ObAdj[k] = Book{
-		Time:    c.ConvertExchStmp(c.ObRaw[k].TmStmp),
-		BestBid: Quote{Prc: bestBid, Amt: bestBidAmt, Drctn: DrctnBuy},
-		BestAsk: Quote{Prc: bestAsk, Amt: bestAskAmt, Drctn: DrctnSell},
-		Bids:    bidsAdj,
-		Asks:    asksAdj,
+		TimeStamp: ConvertExchStmp(c.ObRaw[k].TmStmp),
+		BestBid:   Quote{Prc: bestBid, Amt: bestBidAmt},
+		BestAsk:   Quote{Prc: bestAsk, Amt: bestAskAmt},
+		Bids:      bidsAdj,
+		Asks:      asksAdj,
 	}
 	return nil
 }

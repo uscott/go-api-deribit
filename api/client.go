@@ -25,9 +25,8 @@ import (
 
 // Test and Production URLs
 const (
-	ProdBaseURL    = "wss://www.deribit.com/ws/api/v2/"
-	TestBaseURL    = "wss://test.deribit.com/ws/api/v2/"
-	exchTmStmpUnit = time.Millisecond
+	ProdBaseURL = "wss://www.deribit.com/ws/api/v2/"
+	TestBaseURL = "wss://test.deribit.com/ws/api/v2/"
 )
 
 // MaxTries is the max number of reconnect attempts
@@ -476,26 +475,6 @@ func (c *Client) Call(method string, params interface{}, result interface{}) (er
 	}
 	c.SG.Unlock()
 	return c.rpcConn.Call(c.Config.Ctx, method, params, result)
-}
-
-// ConvertExchStmp converts an exchange time stamp
-// to a client-side time.Time
-func (c *Client) ConvertExchStmp(ts int64) time.Time {
-	ts *= int64(exchTmStmpUnit) / int64(time.Nanosecond)
-	return time.Unix(ts/int64(time.Second), ts%int64(time.Second)).UTC()
-}
-
-// ExchangeTime returns the exchange time as
-// a client-side time.Time
-func (c *Client) ExchangeTime() (time.Time, error) {
-	var (
-		ms  int64
-		err error
-	)
-	if ms, err = c.GetTime(); err != nil {
-		return time.Time{}, err
-	}
-	return c.ConvertExchStmp(ms), nil
 }
 
 // Handle implements jsonrpc2.Handler

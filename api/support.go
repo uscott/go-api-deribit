@@ -52,28 +52,31 @@ type Balance struct {
 // as well as time to expiration and IsSwap
 type FuturesData struct {
 	inout.InstrumentOut
-	TimeToExpiry time.Duration
-	IsSwap       bool
+	Expiration time.Time
+	IsSwap     bool
 }
 
 // Quote has fields prc, amt and direction
 // corresonding to an order book quote
 type Quote struct {
-	Prc   float64 `json:"price"`
-	Amt   float64 `json:"amount"`
-	Drctn string  `json:"direction"`
+	Prc float64 `json:"price"`
+	Amt float64 `json:"amount"`
 }
 
 // Book contains orderbook bids, asks with
 // user orders pruned out
 type Book struct {
-	Contract   string    `json:"contract"`
-	Expiration time.Time `json:"expiration"`
-	Time       time.Time `json:"time"`
-	BestBid    Quote     `json:"best_bid"`
-	BestAsk    Quote     `json:"best_ask"`
-	Bids       []Quote   `json:"bids"`
-	Asks       []Quote   `json:"asks"`
+	BestBid      Quote           `json:"best_bid"`
+	BestAsk      Quote           `json:"best_ask"`
+	Bids         []Quote         `json:"bids"`
+	Asks         []Quote         `json:"asks"`
+	Contract     string          `json:"contract"`
+	Expiration   time.Time       `json:"expiration"`
+	IndxPrc      float64         `json:"index_price"`
+	Last         float64         `json:"last_price"`
+	OpenInterest float64         `json:"open_interest"`
+	Stats        inout.TckrStats `json:"stats"`
+	TimeStamp    time.Time       `json:"timestamp"`
 }
 
 // InitBook sets Bids and Asks fields
