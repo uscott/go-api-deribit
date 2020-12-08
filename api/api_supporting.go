@@ -170,7 +170,7 @@ func (c *Client) NewBook(contract, currency, kind string, depth int) (*Book, err
 	if err != nil {
 		return nil, err
 	}
-	var bkraw inout.BookOut{}
+	var bkraw inout.BookOut
 	err = c.GetBook(con, depth, &bkraw)
 	if err != nil {
 		return nil, err
