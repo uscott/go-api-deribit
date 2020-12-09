@@ -141,8 +141,8 @@ func TestBookPrune(t *testing.T) {
 		if i > nasks-1 {
 			break
 		}
-		bid0 = asksOrig[i]
-		bid1 = bk.Asks[j]
+		ask0 = asksOrig[i]
+		ask1 = bk.Asks[j]
 		if math.Abs(ask1.Amt-ask0.Amt) > api.SMALL || math.Abs(ask1.Prc-ask0.Prc) > api.SMALL {
 			t.Logf("index 0: %d\n", i)
 			t.Logf("index 1: %d\n", j)
