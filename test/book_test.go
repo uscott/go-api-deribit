@@ -89,7 +89,7 @@ func TestBookPrune(t *testing.T) {
 				continue
 			}
 		}
-		quote := bid[i-offset]
+		quote := bk.Bids[i-offset]
 		if math.Abs(quote.Amt-bid.Amt) > api.SMALL || math.Abs(quote.Prc-bid.Prc) > api.SMALL {
 			t.Logf("index:  %d\n", i)
 			t.Logf("offset: %d\n", offset)
