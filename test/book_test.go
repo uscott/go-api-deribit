@@ -80,30 +80,39 @@ func TestBookPrune(t *testing.T) {
 	if err = api.PruneOrdersFromBook(bk, orders); err != nil {
 		t.Fatal(err.Error())
 	}
-	offset := 0
-	for i, bid := range bidsOrig {
+	i, j := 0
+	var bid0, bid1 api.Quote
+	for {
 		for _, index := range indices {
 			if i == index {
-				offset++
+				i++
 				indices = indices[1:]
 				continue
+			} else {
+				break
 			}
 		}
-		quote := bk.Bids[i-offset]
-		if math.Abs(quote.Amt-bid.Amt) > api.SMALL || math.Abs(quote.Prc-bid.Prc) > api.SMALL {
+		if i > len(nbids)-1 {
+			break
+		}
+		bid0 = bidsOrig[i]
+		bid1 = bk.Bids[j]
+		if math.Abs(bid1.Amt-bid0.Amt) > api.SMALL || math.Abs(bid1.Prc-bid0.Prc) > api.SMALL {
 			t.Logf("index:  %d\n", i)
 			t.Logf("offset: %d\n", offset)
-			t.Logf("Bid 1:  %+v\n", bid)
-			t.Logf("Bid 2:  %+v\n", quote)
-			t.Logf("Bids Orig.: %+v\n", bidsOrig)
+			t.Logf("Bid 0:  %+v\n", bid0)
+			t.Logf("Bid 1:  %+v\n", bid1)
+			t.Logf("Bids Orig.: %+v\n", bid0sOrig)
 			t.Logf("Bids:       %+v\n", bk.Bids)
 			t.Fatal("unexpected difference in bids")
 		}
+		i++
+		j++
 	}
 	orders = make([]inout.Order, 0, depth)
 	nasks := len(bk.Asks)
 	asksOrig := make([]api.Quote, nasks)
-	indices = []int{1, 3, 4, 8}
+	indices = []int{1, 3, 4, 5, 9}
 	for _, i := range indices {
 		quote := bk.Asks[i]
 		ord := inout.Order{
@@ -117,21 +126,28 @@ func TestBookPrune(t *testing.T) {
 	if err = api.PruneOrdersFromBook(bk, orders); err != nil {
 		t.Fatal(err.Error())
 	}
-	offset = 0
-	for i, ask := range asksOrig {
+	i, j = 0, 0
+	bid0, ask0 = api.Quote{}, api.Quote{}
+	for {
 		for _, index := range indices {
 			if i == index {
-				offset++
+				i++
 				indices = indices[1:]
 				continue
+			} else {
+				break
 			}
 		}
-		quote := bk.Asks[i-offset]
-		if math.Abs(quote.Amt-ask.Amt) > api.SMALL || math.Abs(quote.Prc-ask.Prc) > api.SMALL {
+		if i > len(nasks)-1 {
+			break
+		}
+		bid0 = asksOrig[i]
+		bid1 = bk.Asks[j]
+		if math.Abs(ask1.Amt-ask0.Amt) > api.SMALL || math.Abs(ask1.Prc-ask0.Prc) > api.SMALL {
 			t.Logf("index:  %d\n", i)
 			t.Logf("offset: %d\n", offset)
-			t.Logf("Ask 1:  %+v\n", ask)
-			t.Logf("Ask 2:  %+v\n", quote)
+			t.Logf("Ask 1:  %+v\n", ask0)
+			t.Logf("Ask 2:  %+v\n", ask1)
 			t.Logf("Asks Orig.: %+v\n", asksOrig)
 			t.Logf("Asks:       %+v\n", bk.Asks)
 			t.Fatal("unexpected difference in asks")
