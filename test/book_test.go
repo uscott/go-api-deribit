@@ -86,10 +86,10 @@ func TestBookPrune(t *testing.T) {
 			if i == index {
 				offset++
 				indices = indices[1:]
-				break
+				continue
 			}
 		}
-		quote := bk.Bids[i+offset]
+		quote := bid[i-offset]
 		if math.Abs(quote.Amt-bid.Amt) > api.SMALL || math.Abs(quote.Prc-bid.Prc) > api.SMALL {
 			t.Logf("index:  %d\n", i)
 			t.Logf("offset: %d\n", offset)
@@ -123,10 +123,10 @@ func TestBookPrune(t *testing.T) {
 			if i == index {
 				offset++
 				indices = indices[1:]
-				break
+				continue
 			}
 		}
-		quote := bk.Asks[i+offset]
+		quote := bk.Asks[i-offset]
 		if math.Abs(quote.Amt-ask.Amt) > api.SMALL || math.Abs(quote.Prc-ask.Prc) > api.SMALL {
 			t.Logf("index:  %d\n", i)
 			t.Logf("offset: %d\n", offset)
