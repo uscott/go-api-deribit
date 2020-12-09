@@ -91,7 +91,13 @@ func TestBookPrune(t *testing.T) {
 		}
 		quote := bk.Bids[i+offset]
 		if math.Abs(quote.Amt-bid.Amt) > api.SMALL || math.Abs(quote.Prc-bid.Prc) > api.SMALL {
-			t.Fatal("unexpected difference")
+			t.Logf("index:  %d\n", i)
+			t.Logf("offset: %d\n", offset)
+			t.Logf("Bid 1:  %+v\n", bid)
+			t.Logf("Bid 2:  %+v\n", quote)
+			t.Logf("Bids Orig.: %+v\n", bidsOrig)
+			t.Logf("Bids:       %+v\n", bk.Bids)
+			t.Fatal("unexpected difference in bids")
 		}
 	}
 	orders = make([]inout.Order, 0, depth)
@@ -122,7 +128,13 @@ func TestBookPrune(t *testing.T) {
 		}
 		quote := bk.Asks[i+offset]
 		if math.Abs(quote.Amt-ask.Amt) > api.SMALL || math.Abs(quote.Prc-ask.Prc) > api.SMALL {
-			t.Fatal("unexpected difference")
+			t.Logf("index:  %d\n", i)
+			t.Logf("offset: %d\n", offset)
+			t.Logf("Ask 1:  %+v\n", ask)
+			t.Logf("Ask 2:  %+v\n", quote)
+			t.Logf("Asks Orig.: %+v\n", asksOrig)
+			t.Logf("Asks:       %+v\n", bk.Asks)
+			t.Fatal("unexpected difference in asks")
 		}
 	}
 }
