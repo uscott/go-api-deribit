@@ -204,11 +204,20 @@ func (c *Client) NewFuturesData(contract, currency string) (*FuturesData, error)
 }
 
 func PruneOrdersFromBook(bk *Book, orders []inout.Order) error {
+	n := len(orders)
+	if n == 0 {
+		return nil
+	}
 	if bk == nil {
 		return errs.ErrNilPtr
 	}
-	bidOrders := make([]inout.Order, 0, len(orders))
-	askOrders := make([]inout.Order, 0, len(orders))
+	if cap(bk.bidOrderBuf) < n {
+		bk.bidOrderBuf = make([]inout.Order, 0, n)
+	}
+	if cap(bk.askOrderBuf) < n {
+		bk.askOrderBuf = make([]inout.Order, 0, n)
+	}
+	bidOrders, askOrders := bk.bidOrderBuf[:0], bk.askOrderBuf[:0]
 	for _, o := range orders {
 		switch o.Direction {
 		case DirBuy:

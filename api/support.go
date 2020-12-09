@@ -77,6 +77,8 @@ type Book struct {
 	OpenInterest float64         `json:"open_interest"`
 	Stats        inout.TckrStats `json:"stats"`
 	TimeStamp    time.Time       `json:"timestamp"`
+	bidOrderBuf  []inout.Order
+	askOrderBuf  []inout.Order
 }
 
 // InitBook sets Bids and Asks fields
