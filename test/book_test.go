@@ -112,7 +112,7 @@ func TestBookPrune(t *testing.T) {
 	orders = make([]inout.Order, 0, depth)
 	nasks := len(bk.Asks)
 	asksOrig := make([]api.Quote, nasks)
-	n := copy(asksOrig, bk.Asks)
+	n = copy(asksOrig, bk.Asks)
 	if n < nasks {
 		t.Fatalf("fewer copied than expected: %d, %d\n", n, nbids)
 	}
