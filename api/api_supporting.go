@@ -107,6 +107,7 @@ func CpyBook(src *inout.BookOut, dst *Book) error {
 	dst.Contract = src.Instrument
 	dst.IndxPrc = src.IndxPrc
 	dst.Last = src.Last
+	dst.Mark = src.Mark
 	dst.OpenInterest = src.OpnIntrst
 	dst.Stats = src.Stats
 	dst.TimeStamp = ConvertExchStmp(src.TmStmp)

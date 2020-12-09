@@ -74,6 +74,7 @@ type Book struct {
 	Expiration   time.Time       `json:"expiration"`
 	IndxPrc      float64         `json:"index_price"`
 	Last         float64         `json:"last_price"`
+	Mark         float64         `json:"mark"`
 	OpenInterest float64         `json:"open_interest"`
 	Stats        inout.TckrStats `json:"stats"`
 	TimeStamp    time.Time       `json:"timestamp"`
