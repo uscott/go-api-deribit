@@ -81,7 +81,7 @@ func TestBookPrune(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	offset := 0
-	for i, bid := range bidsOld {
+	for i, bid := range bidsOrig {
 		for _, index := range indices {
 			if i == index {
 				offset++
