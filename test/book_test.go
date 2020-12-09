@@ -80,7 +80,7 @@ func TestBookPrune(t *testing.T) {
 	if err = api.PruneOrdersFromBook(bk, orders); err != nil {
 		t.Fatal(err.Error())
 	}
-	i, j := 0
+	i, j := 0, 0
 	var bid0, bid1 api.Quote
 	for {
 		for _, index := range indices {
@@ -92,17 +92,17 @@ func TestBookPrune(t *testing.T) {
 				break
 			}
 		}
-		if i > len(nbids)-1 {
+		if i > nbids-1 {
 			break
 		}
 		bid0 = bidsOrig[i]
 		bid1 = bk.Bids[j]
 		if math.Abs(bid1.Amt-bid0.Amt) > api.SMALL || math.Abs(bid1.Prc-bid0.Prc) > api.SMALL {
-			t.Logf("index:  %d\n", i)
-			t.Logf("offset: %d\n", offset)
+			t.Logf("index 0: %d\n", i)
+			t.Logf("index 1: %d\n", j)
 			t.Logf("Bid 0:  %+v\n", bid0)
 			t.Logf("Bid 1:  %+v\n", bid1)
-			t.Logf("Bids Orig.: %+v\n", bid0sOrig)
+			t.Logf("Bids Orig.: %+v\n", bidsOrig)
 			t.Logf("Bids:       %+v\n", bk.Bids)
 			t.Fatal("unexpected difference in bids")
 		}
@@ -127,7 +127,7 @@ func TestBookPrune(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 	i, j = 0, 0
-	bid0, ask0 = api.Quote{}, api.Quote{}
+	var ask0, ask1 api.Quote
 	for {
 		for _, index := range indices {
 			if i == index {
