@@ -152,5 +152,7 @@ func TestBookPrune(t *testing.T) {
 			t.Logf("Asks:       %+v\n", bk.Asks)
 			t.Fatal("unexpected difference in asks")
 		}
+		i++
+		j++
 	}
 }
