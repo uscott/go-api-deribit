@@ -1,6 +1,7 @@
 package test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/uscott/go-api-deribit/api"
@@ -28,25 +29,25 @@ func TestBookCreate(t *testing.T) {
 	nbids, nasks := len(bk.Bids), len(bk.Asks)
 	for i, bid := range bkraw.Bids {
 		quote := bk.Bids[i]
-		if abs(quote.Prc-bid[0]) > api.SMALL || abs(quote.Amt-bid[1]) > api.SMALL {
+		if math.Abs(quote.Prc-bid[0]) > api.SMALL || math.Abs(quote.Amt-bid[1]) > api.SMALL {
 			t.Fatal("bids not equal")
 		}
 	}
 	for i, ask := range bkraw.Asks {
 		quote := bk.Asks[i]
-		if abs(quote.Prc-ask[0] > api.SMALL || abs(quote.Amt-ask[1]) > api.SMALL) {
+		if math.Abs(quote.Prc-ask[0] > api.SMALL || math.Abs(quote.Amt-ask[1]) > api.SMALL) {
 			t.Fatal("asks not equal")
 		}
 	}
 	if nbids > 0 {
 		best, quote := bk.BestBid, bk.Bids[0]
-		if abs(best.Prc-quote.Prc) > api.SMALL || abs(best.Amt-quote.Amt) > api.SMALL {
+		if math.Abs(best.Prc-quote.Prc) > api.SMALL || math.Abs(best.Amt-quote.Amt) > api.SMALL {
 			t.Fatal("best bid is wrong")
 		}
 	}
 	if nasks > 0 {
 		best, quote := bk.BestAsk, bk.Asks[0]
-		if abs(best.Prc-quote.Prc) > api.SMALL || abs(best.Amt-quote.Amt) > api.SMALL {
+		if math.Abs(best.Prc-quote.Prc) > api.SMALL || math.Abs(best.Amt-quote.Amt) > api.SMALL {
 			t.Fatal("best bid is wrong")
 		}
 	}
@@ -72,7 +73,7 @@ func TestBookPrune(t *testing.T) {
 			Amt:        quote.Amt,
 			Direction:  api.DirBuy,
 			Instrument: c,
-			Prc:        quote.Prc,
+			Prc:        inout.Price(quote.Prc),
 		}
 		orders = append(orders, ord)
 	}
@@ -89,7 +90,7 @@ func TestBookPrune(t *testing.T) {
 			}
 		}
 		quote := bk.Bids[i+offset]
-		if abs(quote.Amt-bid.Amt) > api.SMALL || abs(quote.Prc-bid.Prc) > api.SMALL {
+		if math.Abs(quote.Amt-bid.Amt) > api.SMALL || math.Abs(quote.Prc-bid.Prc) > api.SMALL {
 			t.Fatal("unexpected difference")
 		}
 	}
@@ -103,7 +104,7 @@ func TestBookPrune(t *testing.T) {
 			Amt:        quote.Amt,
 			Direction:  api.DirSell,
 			Instrument: c,
-			Prc:        quote.Prc,
+			Prc:        inout.Price(quote.Prc),
 		}
 		orders = append(orders, ord)
 	}
@@ -120,7 +121,7 @@ func TestBookPrune(t *testing.T) {
 			}
 		}
 		quote := bk.Asks[i+offset]
-		if abs(quote.Amt-ask.Amt) > api.SMALL || abs(quote.Prc-ask.Prc) > api.SMALL {
+		if math.Abs(quote.Amt-ask.Amt) > api.SMALL || math.Abs(quote.Prc-ask.Prc) > api.SMALL {
 			t.Fatal("unexpected difference")
 		}
 	}
