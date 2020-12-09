@@ -35,7 +35,7 @@ func TestBookCreate(t *testing.T) {
 	}
 	for i, ask := range bkraw.Asks {
 		quote := bk.Asks[i]
-		if math.Abs(quote.Prc-ask[0] > api.SMALL || math.Abs(quote.Amt-ask[1]) > api.SMALL) {
+		if math.Abs(quote.Prc-ask[0]) > api.SMALL || math.Abs(quote.Amt-ask[1]) > api.SMALL {
 			t.Fatal("asks not equal")
 		}
 	}
